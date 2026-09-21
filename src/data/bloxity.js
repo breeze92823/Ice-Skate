@@ -1,0 +1,140 @@
+// Every tunable number for the Bloxity (Legion) SDK integration lives here
+// (systems/bloxity.js, systems/avatarModel.js). No SDK constant belongs in a
+// component.
+
+// TODO: replace with the slug this game is registered under on bloxity.io.
+export const GAME_SLUG = 'ice-skate'
+
+export const AVATAR_CDN = 'https://static.bloxity.io/avatars'
+
+// Profile picture shown for a guest (not signed in) or when a signed-in user
+// has no `pfp`. components/hud/IdentityChip.jsx's <img> onError falls back
+// to an inline silhouette so a blocked CDN never leaves an empty slot.
+export const GUEST_PFP_URL = 'https://static.bloxity.io/img/pfps/s0.png?width=128&quality=85&v=2'
+
+// The base rig, measured from the shipped player.glb: origin at the feet, 6.4
+// units tall at bind pose. Player.jsx's group origin is also the feet, so the
+// model only needs a uniform scale to land in metres.
+export const RIG_HEIGHT = 6.4
+
+// Bind-pose values of the rig nodes the proportions drive.
+export const RIG = {
+  root: 'Rig1',
+  armOffsetX: 2, // ArmL_Offset.x, mirrored for ArmR_Offset
+  legOffsetX: 0.6, // LegL_Offset.x, mirrored
+  neckOffsetY: 0.6, // Neck_Offset.y
+}
+
+// getProportions() ranges, straight from the SDK spec. Values arrive from a
+// remote portal, so everything is clamped before it reaches the scene graph.
+export const PROPORTIONS = {
+  height: { def: 1, min: 0.5, max: 1.6 },
+  shoulderWidth: { def: 1, min: 0.5, max: 1.5 },
+  armLength: { def: 1, min: 0.05, max: 3 },
+  legOffsetX: { def: 1, min: -0.7, max: 5 },
+  torsoScaleX: { def: 1, min: 0.3, max: 2 },
+  neckHeight: { def: 1, min: 0.94, max: 1.2 },
+  headScale: { def: 1, min: 0.3, max: 2.6 },
+}
+
+// Equipped-slot table. `part` slots replace the matching default_* mesh in
+// the base rig; `item` slots are extra meshes parented to a bone.
+export const AVATAR_SLOTS = [
+  { key: 'headId', kind: 'part', type: 'head', replaces: 'default_head', bone: 'Neck1' },
+  { key: 'torsoId', kind: 'part', type: 'torso', replaces: 'default_torso', bone: 'Spine1' },
+  { key: 'armLId', kind: 'part', type: 'arms', side: 'L', replaces: 'default_arm_L', bone: 'ArmL1' },
+  { key: 'armRId', kind: 'part', type: 'arms', side: 'R', replaces: 'default_arm_R', bone: 'ArmR1' },
+  { key: 'legLId', kind: 'part', type: 'legs', side: 'L', replaces: 'default_leg_L', bone: 'LegL1' },
+  { key: 'legRId', kind: 'part', type: 'legs', side: 'R', replaces: 'default_leg_R', bone: 'LegR1' },
+  { key: 'hatId', kind: 'item', type: 'hats', attach: 'Neck1' },
+  { key: 'backId', kind: 'item', type: 'back', attach: 'Spine2' },
+]
+
+// '-1' / '' / 'undefined' / null all mean "nothing equipped, use the default".
+export function isEquipped(id) {
+  return id != null && id !== '' && id !== '-1' && id !== 'undefined' && id !== 'null'
+}
+
+export function partUrl(slot, id) {
+  const suffix = slot.side ? `_${slot.side}` : ''
+  return `${AVATAR_CDN}/parts/${slot.type}/${id}${suffix}.glb`
+}
+
+export function itemUrls(slot, id) {
+  return {
+    mesh: `${AVATAR_CDN}/items/${slot.type}/${id}.obj`,
+    texture: `${AVATAR_CDN}/textures/${slot.type}/${id}.png`,
+  }
+}
+
+export function skinUrl(id) {
+  return `${AVATAR_CDN}/skins/${id}.png`
+}
+
+export const BASE_MODEL_URL = `${AVATAR_CDN}/player.glb`
+
+// What a guest (no SDK, not signed in, or the avatar read failed) wears. An
+// empty set renders the base rig exactly as it ships.
+export const DEFAULT_EQUIPPED = {}
+
+// --- Locomotion: the run cycle -----------------------------------------
+// The base rig is R6-style: single-segment limbs (ArmL1/ArmR1/LegL1/LegR1)
+// and a two-node spine. If player.glb ships its own clip whose name matches
+// `runClip`, avatarAnim.js plays that through an AnimationMixer instead and
+// ignores every number below; these only drive the generated fallback.
+export const GAIT = {
+  runClip: /run|sprint|jog/i,
+  idleClip: /idle|stand/i,
+  strideHz: 2.6,
+  legSwing: 0.9,
+  armSwing: 0.55,
+  lean: 0.12,
+  bob: 0.06,
+  swingAxis: 'x',
+  blendHz: 8,
+
+  swayAxis: 'z',
+  idleSwayHz: 1.6,
+  idleArmSway: 0.07,
+  idleArmSwayAmp: 0.03,
+  idleSpineSway: 0.02,
+  idleBob: 0.03,
+
+  airborneLegL: -0.55,
+  airborneLegR: 0.3,
+  airborneArm: -2.1,
+  airborneLean: -0.1,
+
+  turnRate: 0.001, // base of 1 - turnRate^delta; smaller = snappier turn
+}
+
+export function clamp(n, min, max) {
+  return n < min ? min : n > max ? max : n
+}
+
+// --- Settings -------------------------------------------------------------
+// All SDK setting values are strings. Registering a listener is what makes
+// the control appear in the portal menu, so every key here has something
+// behind it.
+export const SETTINGS = {
+  master_volume: { def: '80', type: 'number', min: 0, max: 100 },
+  music_volume: { def: '80', type: 'number', min: 0, max: 100 },
+  graphics_quality: { def: 'High', type: 'enum', values: ['Low', 'Medium', 'High', 'Ultra'] },
+  show_fps: { def: 'false', type: 'bool' },
+  camera_sensitivity: { def: '1', type: 'number', min: 0.1, max: 5 },
+  fullscreen: { def: 'false', type: 'bool' },
+  background_transparency: { def: '0.9', type: 'number', min: 0.2, max: 1 },
+}
+
+// Coerce one raw SDK string against its SETTINGS entry.
+export function coerceSetting(key, raw) {
+  const spec = SETTINGS[key]
+  if (!spec) return raw
+  const value = raw === '' || raw == null ? spec.def : raw
+  if (spec.type === 'bool') return value === 'true'
+  if (spec.type === 'enum') {
+    return spec.values.includes(value) ? value : spec.def
+  }
+  const n = Number(value)
+  return clamp(Number.isFinite(n) ? n : Number(spec.def), spec.min, spec.max)
+}
