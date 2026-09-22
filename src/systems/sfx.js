@@ -12,8 +12,8 @@ import {
   LASER_BEAM_GAIN,
   LASER_BEAM_FADE_IN,
   LASER_BEAM_FADE_OUT,
-  POWER_GAIN_SOUND_URL,
-  POWER_GAIN_GAIN,
+  SPEED_GAIN_SOUND_URL,
+  SPEED_GAIN_GAIN,
   LEVEL_UP_GAIN,
   LEVEL_UP_SYNTH_NOTES_HZ,
   LEVEL_UP_SYNTH_NOTE_GAP_S,
@@ -70,7 +70,7 @@ export function preload() {
   if (!ctx) return
   loadBuffer(ctx, LASER_FIRE_SOUND_URL)
   loadBuffer(ctx, LASER_BEAM_SOUND_URL)
-  loadBuffer(ctx, POWER_GAIN_SOUND_URL)
+  loadBuffer(ctx, SPEED_GAIN_SOUND_URL)
   synthesizeLevelUpBuffer(ctx)
   synthesizeButtonClickBuffer(ctx)
   synthesizeActionFailBuffer(ctx)
@@ -94,16 +94,16 @@ export function playLaserPulse() {
   })
 }
 
-// Fire-and-forget "pop" for a Power gain.
-export function playPowerGainPop() {
+// Fire-and-forget "pop" for a Speed gain.
+export function playSpeedGainPop() {
   const ctx = unlock()
   if (!ctx) return
-  loadBuffer(ctx, POWER_GAIN_SOUND_URL).then((buffer) => {
+  loadBuffer(ctx, SPEED_GAIN_SOUND_URL).then((buffer) => {
     if (!buffer) return
     const source = ctx.createBufferSource()
     source.buffer = buffer
     const gain = ctx.createGain()
-    gain.gain.value = POWER_GAIN_GAIN
+    gain.gain.value = SPEED_GAIN_GAIN
     source.connect(gain)
     gain.connect(getMasterBus())
     source.start(0)

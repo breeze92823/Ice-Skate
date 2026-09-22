@@ -23,8 +23,8 @@ installInput()
 initNet()
 
 // Dev-only console access to the progression store, e.g.
-// window.__gameStore.setState({ power: 9999 }) to test the level bar/rebirth
-// gate without a gameplay loop feeding Power yet. Never present in a
+// window.__gameStore.setState({ speed: 9999 }) to test the level bar/rebirth
+// gate without a gameplay loop feeding Speed yet. Never present in a
 // production build.
 if (import.meta.env.DEV) window.__gameStore = useGameStore
 

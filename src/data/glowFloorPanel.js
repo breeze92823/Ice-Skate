@@ -4,8 +4,6 @@
 // into a flat vertical glow gradient (see GlowFloorPanelProp.jsx). Walking
 // onto it awards Wins once per visit (systems/glowFloorPanel.js) — the one
 // place useGameStore's awardWins was already wired for but never called.
-import { GROUND_Y, ISLAND_X, ISLAND_Z } from './hub.js'
-
 export const GLOW_FLOOR_PANEL_MODEL_URL = '/models/glow_floor_panel.glb'
 
 // Local-space (pre-scale) vertical extent of the glow_floor_panel mesh — the
@@ -19,18 +17,24 @@ export const GLOW_FLOOR_PANEL_TOP_Y = 0.5628908276557922
 // reads at the same real-world size (roughly 3.3m across).
 export const GLOW_FLOOR_PANEL_SCALE = 2.757075548171997
 
-// Single panel, dead center of the main island's top surface
-// (data/hub.js's [ISLAND_X, GROUND_Y, ISLAND_Z]) — clear of the road strip
-// (data/road.js: x -5..5, z -17..17) and the treadmill (hub.js's
-// TREADMILL_POSITION). Level layout is data here, not a Blender file (same
-// convention as hub.js/road.js), so this is an authored position, not a
-// Blender sync. Kept as an array (rather than a single object) so
-// GlowFloorPanels.jsx/systems/glowFloorPanel.js need no special-casing if a
-// second panel is ever added.
-export const GLOW_FLOOR_PANEL_POSITIONS = [[0, GROUND_Y, 0]]
+// One panel per stage (see project-stage-layout memory), synced from
+// Blender/world.blend's WinPad.002-WinPad.006 objects (Stage2-Stage6
+// collections respectively) via the project-blender-previz-rig memory's
+// axis conversion: three.(x, y, z) = (blender.x, blender.z, -blender.y).
+// Kept as an array (rather than a single object) so
+// GlowFloorPanels.jsx/systems/glowFloorPanel.js need no special-casing for
+// any number of panels.
+export const GLOW_FLOOR_PANEL_POSITIONS = [
+  [-10.69305419921875, 6, 136.17398071289062], // WinPad.002 — Stage 2
+  [-10.69305419921875, 6, 250.5469512939453], // WinPad.003 — Stage 3
+  [-10.69305419921875, 20, 382.8660888671875], // WinPad.004 — Stage 4
+  [-10.69305419921875, 18, 500.8358459472656], // WinPad.005 — Stage 5
+  [-10.69305419921875, 18, 608.1096801757812], // WinPad.006 — Stage 6
+]
 
-// Flat Wins granted the moment the player steps onto the panel.
-export const GLOW_FLOOR_PANEL_WINS = [10]
+// Flat Wins granted the moment the player steps onto each panel, index-
+// aligned with GLOW_FLOOR_PANEL_POSITIONS. Ramps up per stage.
+export const GLOW_FLOOR_PANEL_WINS = [1, 3, 10, 30, 100]
 
 // Horizontal (X/Z) distance from the panel's placement position within which
 // the player counts as standing on it.

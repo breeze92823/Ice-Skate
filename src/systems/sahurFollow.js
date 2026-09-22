@@ -21,7 +21,7 @@ const HALF_DEPTH = GDEPTH / 2
 const HOME_X = SAHUR_MODEL.position[0]
 const HOME_Z = SAHUR_MODEL.position[2]
 
-const SPEED = 5 // m/s — a touch under the player's own 6 (playerMovement.js), so a chase trails rather than overtakes
+const SPEED = 5 // m/s — a touch under the player's own base 6 (playerMovement.js's WALK_SPEED_BASE), so a chase trails a fresh player rather than overtaking; a player who has walked up their Speed stat will outrun it further still
 const ACCEL = 30 // m/s^2, matches the "approach" feel of playerMovement.js
 const STOP_DISTANCE = 2 // metres — how close a chase closes in before halting
 const HOME_BRAKE_DISTANCE = 0.3 // metres — walking-home's own (much shorter) braking zone, so it eases in rather than overshooting

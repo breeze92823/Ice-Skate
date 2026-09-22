@@ -6,6 +6,11 @@ export const player = {
   velocity: { x: 0, y: 0, z: 0 },
   grounded: true,
   facing: Math.PI, // yaw the character model faces, radians
+  // Current target ground speed (m/s) — systems/playerMovement.js recomputes
+  // this every frame from the store's Speed stat (data/progression.js's
+  // walkSpeedForLevel) before using it to drive velocity. Read by
+  // PlayerAvatar.jsx to normalize the run-cycle rate.
+  moveSpeed: 6,
   // Live collider dimensions. Seeded from the defaults below, but the
   // avatar's height/shoulderWidth proportions rescale them.
   dims: { radius: 0.4, height: 1.8 },

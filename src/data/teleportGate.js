@@ -19,7 +19,7 @@
 export const TELEPORT_GATES = [
   {
     name: 'Teleport_Gate',
-    position: [-15.433443069458008, 10.662978172302246, 30.266468048095703],
+    position: [-9.00705623626709, 10.662978172302246, 30.266468048095703],
     rotationY: Math.PI / 2,
     size: 5.949975490570068,
   },

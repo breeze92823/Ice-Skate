@@ -11,8 +11,8 @@ export const AFK_INTERACT_KEY = 'KeyE'
 export const AFK_TARGET_CONFIG = {}
 
 // "xN" tier string (or a bare number) -> the multiplier actually applied to
-// each AFK Action's Power. "x0" and anything non-positive collapse to 1x.
-export function afkPowerMultiplier(power) {
-  const n = typeof power === 'string' ? parseInt(power.replace(/^x/i, ''), 10) : Number(power)
+// each AFK Action's Speed. "x0" and anything non-positive collapse to 1x.
+export function afkSpeedMultiplier(speed) {
+  const n = typeof speed === 'string' ? parseInt(speed.replace(/^x/i, ''), 10) : Number(speed)
   return Number.isFinite(n) && n > 0 ? n : 1
 }

@@ -6,6 +6,10 @@ import Water from './components/Water.jsx'
 import Ground from './components/Ground.jsx'
 import GroundBlocks from './components/GroundBlocks.jsx'
 import SlopeBlock from './components/SlopeBlock.jsx'
+import SideWalls from './components/SideWalls.jsx'
+import StageWalls from './components/StageWalls.jsx'
+import Hammer from './components/Hammer.jsx'
+import RampBlock from './components/RampBlock.jsx'
 import Road from './components/Road.jsx'
 import Player from './components/Player.jsx'
 import Treadmill from './components/Treadmill.jsx'
@@ -54,12 +58,16 @@ export default function App() {
           <SlopeBlock />
           <Sahur />
           <GlowFloorPanels />
+          <Hammer />
+          <RampBlock />
         </Suspense>
         <Road />
         <Player />
         <Treadmill />
         <TeleportGate />
         <GiantBall />
+        <SideWalls />
+        <StageWalls />
       </Canvas>
       <Hud />
     </>

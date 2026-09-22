@@ -7,13 +7,13 @@
 import { inputState, isHeld } from './input.js'
 import { player } from './playerState.js'
 import { useGameStore } from '../store/useGameStore.js'
-import { playPowerGainPop } from './sfx.js'
-import { AFK_RANGE, AFK_TARGET_CONFIG, afkPowerMultiplier } from '../data/afk.js'
+import { playSpeedGainPop } from './sfx.js'
+import { AFK_RANGE, AFK_TARGET_CONFIG, afkSpeedMultiplier } from '../data/afk.js'
 
 export const afkState = {
   active: false, // true while locked onto targetId and auto-firing
   targetId: null, // AFK_TARGET_CONFIG id currently locked onto, valid only while active
-  multiplier: 1, // power multiplier for the locked target, valid only while active
+  multiplier: 1, // speed multiplier for the locked target, valid only while active
   nearTargetId: null, // nearest configured target within AFK_RANGE this frame, or null
   nearAllowed: false, // player's rebirth meets nearTargetId's rebirthRequired AND (no winsRequired or already owned)
   nearRebirthRequired: 0, // nearTargetId's rebirthRequired, for the HUD prompt
@@ -52,8 +52,8 @@ export function stopAfk() {
 export function startAfk(id) {
   afkState.active = true
   afkState.targetId = id
-  afkState.multiplier = afkPowerMultiplier(AFK_TARGET_CONFIG[id].power)
-  playPowerGainPop()
+  afkState.multiplier = afkSpeedMultiplier(AFK_TARGET_CONFIG[id].speed)
+  playSpeedGainPop()
 }
 
 export function step() {

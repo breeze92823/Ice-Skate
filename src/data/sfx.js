@@ -13,10 +13,10 @@ export const LASER_BEAM_GAIN = 0.09
 export const LASER_BEAM_FADE_IN = 0.04
 export const LASER_BEAM_FADE_OUT = 0.06
 
-// One-shot fired every time an Action grants Power. Pitched into the
+// One-shot fired every time a walking tick grants Speed. Pitched into the
 // 1.4-2.8kHz range so it stays clear of laser_beam.mp3's sub-800Hz energy.
-export const POWER_GAIN_SOUND_URL = '/audio/power_gain.mp3'
-export const POWER_GAIN_GAIN = 0.135
+export const SPEED_GAIN_SOUND_URL = '/audio/power_gain.mp3'
+export const SPEED_GAIN_GAIN = 0.135
 
 // One-shot fired every time the store's `level` rises. No real file dropped
 // yet, so systems/sfx.js's playLevelUp() synthesizes it via WebAudio.

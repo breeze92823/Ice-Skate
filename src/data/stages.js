@@ -19,4 +19,14 @@ export const STAGES = [
   { id: 4, label: 'Stage 04', spawn: blockSpawn('Ground.015') },
   { id: 5, label: 'Stage 05', spawn: blockSpawn('Ground.024') },
   { id: 6, label: 'Stage 06', spawn: blockSpawn('Ground.028') },
+  { id: 7, label: 'Stage 07', spawn: blockSpawn('Ground.043') },
+  // Stages 8-13 added 2026-09-23 alongside the GroundBlock.007-.012 sync;
+  // spawn blocks confirmed by the user the same day (see
+  // project-stage-layout memory).
+  { id: 8, label: 'Stage 08', spawn: blockSpawn('Ground.046') },
+  { id: 9, label: 'Stage 09', spawn: blockSpawn('Ground.049') },
+  { id: 10, label: 'Stage 10', spawn: blockSpawn('Ground.052') },
+  { id: 11, label: 'Stage 11', spawn: blockSpawn('Ground.055') },
+  { id: 12, label: 'Stage 12', spawn: blockSpawn('Ground.056') },
+  { id: 13, label: 'Stage 13', spawn: blockSpawn('Ground.059') },
 ]

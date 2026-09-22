@@ -5,7 +5,7 @@
 // award re-arms only after the player leaves the zone.
 import { player } from './playerState.js'
 import { useGameStore } from '../store/useGameStore.js'
-import { playPowerGainPop } from './sfx.js'
+import { playSpeedGainPop } from './sfx.js'
 import { showActionResult } from './actionResult.js'
 import { formatShort } from '../data/format.js'
 import {
@@ -46,7 +46,7 @@ export function step() {
     const amount = GLOW_FLOOR_PANEL_WINS[index] ?? 0
     if (amount > 0) {
       useGameStore.getState().awardWins(amount)
-      playPowerGainPop()
+      playSpeedGainPop()
       showActionResult(`+${formatShort(amount)} Wins`, true)
     }
   }

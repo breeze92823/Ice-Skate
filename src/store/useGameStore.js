@@ -1,8 +1,8 @@
 import { create } from 'zustand'
 import {
-  POWER_INITIAL,
-  POWER_MIN,
-  POWER_MAX,
+  SPEED_INITIAL,
+  SPEED_MIN,
+  SPEED_MAX,
   LEVEL_INITIAL,
   REBIRTH_INITIAL,
   REBIRTH_MIN,
@@ -10,12 +10,12 @@ import {
   WINS_INITIAL,
   WINS_MIN,
   WINS_MAX,
-  POWER_PER_ACTION_INITIAL,
-  levelForPower,
+  SPEED_PER_GAIN_INITIAL,
+  levelForSpeed,
   canAcceptRebirth,
   clamp,
 } from '../data/progression.js'
-import { HEX_POWER_PAD_TIERS } from '../data/hexPowerPad.js'
+import { HEX_SPEED_PAD_TIERS } from '../data/hexPowerPad.js'
 import { AURA_TIERS, auraStrengthMultiplier } from '../data/aura.js'
 import { SHOP_ITEMS } from '../data/shop.js'
 import { AFK_TARGET_CONFIG } from '../data/afk.js'
@@ -24,19 +24,19 @@ import { AFK_TARGET_CONFIG } from '../data/afk.js'
 // persist, no immer, no subscribeWithSelector).
 
 // Recomputes every field that is a pure function of another durable field.
-// Called at the end of any action that changes power, so level never has to
+// Called at the end of any action that changes speed, so level never has to
 // be restated by hand at more than one call site.
 function derive(state) {
-  return { ...state, level: levelForPower(state.power) }
+  return { ...state, level: levelForSpeed(state.speed) }
 }
 
 export const useGameStore = create((set, get) => ({
-  power: POWER_INITIAL,
+  speed: SPEED_INITIAL,
   level: LEVEL_INITIAL,
   rebirth: REBIRTH_INITIAL,
   wins: WINS_INITIAL,
-  powerPerAction: POWER_PER_ACTION_INITIAL,
-  // Tier 0 has winsRequired: 0 and powerPerAction 1 — the free starter tier,
+  speedPerGain: SPEED_PER_GAIN_INITIAL,
+  // Tier 0 has winsRequired: 0 and speedPerGain 1 — the free starter tier,
   // owned and equipped from the start.
   ownedHexPads: new Set([0]),
   equippedHexPad: 0,
@@ -44,19 +44,20 @@ export const useGameStore = create((set, get) => ({
   equippedAura: null,
   ownedTargets: new Set(),
 
-  // One Action's worth of Power. `multiplier` is the AFK target's "xN" tier
-  // while AFK-locked, else 1 — powerPerAction * (rebirth + 1) * multiplier *
-  // aura strength, floored to a whole number. Returns the Power actually
-  // added after the POWER_MAX clamp.
-  gainPower(multiplier = 1) {
+  // One walking Speed-gain tick's worth of Speed (systems/speedGain.js —
+  // every WALK_GAIN_INTERVAL seconds of continuous walking). `multiplier` is
+  // the AFK target's "xN" tier while AFK-locked, else 1 — speedPerGain *
+  // (rebirth + 1) * multiplier * aura strength, floored to a whole number.
+  // Returns the Speed actually added after the SPEED_MAX clamp.
+  gainSpeed(multiplier = 1) {
     let applied = 0
     set((state) => {
       const mult = multiplier > 0 ? multiplier : 1
       const auraMult = auraStrengthMultiplier(state.equippedAura)
-      const gain = Math.floor(state.powerPerAction * (state.rebirth + 1) * mult * auraMult)
-      const power = clamp(state.power + gain, POWER_MIN, POWER_MAX)
-      applied = power - state.power
-      return derive({ ...state, power })
+      const gain = Math.floor(state.speedPerGain * (state.rebirth + 1) * mult * auraMult)
+      const speed = clamp(state.speed + gain, SPEED_MIN, SPEED_MAX)
+      applied = speed - state.speed
+      return derive({ ...state, speed })
     })
     return applied
   },
@@ -70,7 +71,7 @@ export const useGameStore = create((set, get) => ({
       derive({
         ...s,
         rebirth: clamp(s.rebirth + 1, REBIRTH_MIN, REBIRTH_MAX),
-        power: POWER_INITIAL,
+        speed: SPEED_INITIAL,
       }),
     )
   },
@@ -88,7 +89,7 @@ export const useGameStore = create((set, get) => ({
   buyHexPad(index) {
     const state = get()
     if (state.ownedHexPads.has(index)) return
-    const tier = HEX_POWER_PAD_TIERS[index]
+    const tier = HEX_SPEED_PAD_TIERS[index]
     if (!tier || state.wins < tier.winsRequired) return
     set((s) => ({ wins: s.wins - tier.winsRequired, ownedHexPads: new Set(s.ownedHexPads).add(index) }))
   },
@@ -96,9 +97,9 @@ export const useGameStore = create((set, get) => ({
   equipHexPad(index) {
     const state = get()
     if (!state.ownedHexPads.has(index)) return
-    const tier = HEX_POWER_PAD_TIERS[index]
+    const tier = HEX_SPEED_PAD_TIERS[index]
     if (!tier) return
-    set({ equippedHexPad: index, powerPerAction: tier.powerPerAction })
+    set({ equippedHexPad: index, speedPerGain: tier.speedPerGain })
   },
 
   // Called from components/hud/Hud.jsx's AuraEntry wins button. Buying
@@ -156,10 +157,10 @@ export const useGameStore = create((set, get) => ({
     set((s) =>
       derive({
         ...s,
-        power: POWER_INITIAL,
+        speed: SPEED_INITIAL,
         rebirth: REBIRTH_INITIAL,
         wins: WINS_INITIAL,
-        powerPerAction: POWER_PER_ACTION_INITIAL,
+        speedPerGain: SPEED_PER_GAIN_INITIAL,
         ownedHexPads: new Set([0]),
         equippedHexPad: 0,
         ownedAuras: new Set(),
@@ -175,7 +176,7 @@ export const useGameStore = create((set, get) => ({
   hydrate(saved) {
     if (!saved || typeof saved !== 'object') return
     set((s) => {
-      const power = clamp(Number(saved.power) || 0, POWER_MIN, POWER_MAX)
+      const speed = clamp(Number(saved.speed) || 0, SPEED_MIN, SPEED_MAX)
       const rebirth = clamp(Number(saved.rebirth) || 0, REBIRTH_MIN, REBIRTH_MAX)
       const wins = clamp(Number(saved.wins) || 0, WINS_MIN, WINS_MAX)
       const ownedHexPads = new Set(
@@ -185,15 +186,15 @@ export const useGameStore = create((set, get) => ({
       const ownedAuras = new Set(Array.isArray(saved.ownedAuras) ? saved.ownedAuras : [])
       const equippedAura = ownedAuras.has(saved.equippedAura) ? saved.equippedAura : null
       const ownedTargets = new Set(Array.isArray(saved.ownedTargets) ? saved.ownedTargets : [])
-      const tier = HEX_POWER_PAD_TIERS[equippedHexPad]
+      const tier = HEX_SPEED_PAD_TIERS[equippedHexPad]
       return derive({
         ...s,
-        power,
+        speed,
         rebirth,
         wins,
         ownedHexPads,
         equippedHexPad,
-        powerPerAction: tier ? tier.powerPerAction : s.powerPerAction,
+        speedPerGain: tier ? tier.speedPerGain : s.speedPerGain,
         ownedAuras,
         equippedAura,
         ownedTargets,

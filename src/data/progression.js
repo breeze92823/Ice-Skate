@@ -11,14 +11,14 @@ export function envInt(name, fallback) {
   return Number.isFinite(parsed) ? parsed : fallback
 }
 
-export const POWER_INITIAL = envInt('VITE_POWER_INITIAL', 1)
-export const POWER_MIN = 1
-export const POWER_MAX = 1_000_000_000_000
+export const SPEED_INITIAL = envInt('VITE_SPEED_INITIAL', 1)
+export const SPEED_MIN = 1
+export const SPEED_MAX = 1_000_000_000_000
 
 export const LEVEL_INITIAL = 1
 export const LEVEL_MIN = 1
 export const LEVEL_MAX = 50_000
-export const POWER_PER_LEVEL = 50 // level = floor(power / POWER_PER_LEVEL) + 1
+export const SPEED_PER_LEVEL = 50 // level = floor(speed / SPEED_PER_LEVEL) + 1
 
 export const REBIRTH_INITIAL = envInt('VITE_REBIRTH_INITIAL', 0)
 export const REBIRTH_MIN = 0
@@ -29,44 +29,48 @@ export const WINS_INITIAL = envInt('VITE_WINS_INITIAL', 0)
 export const WINS_MIN = 0
 export const WINS_MAX = 1_000_000_000_000
 
-export const POWER_PER_ACTION_INITIAL = 1
-export const POWER_PER_ACTION_MIN = 1
-export const POWER_PER_ACTION_MAX = 3500
+export const SPEED_PER_GAIN_INITIAL = 1
+export const SPEED_PER_GAIN_MIN = 1
+export const SPEED_PER_GAIN_MAX = 3500
 
 // A continuous hold re-fires an Action every this-many seconds.
 export const ACTION_HOLD_INTERVAL = 1
+
+// Continuous walking (movement input held, not dead) re-fires a Speed gain
+// every this-many seconds — systems/speedGain.js.
+export const WALK_GAIN_INTERVAL = 2
 
 export function clamp(n, min, max) {
   return n < min ? min : n > max ? max : n
 }
 
-export function levelForPower(power) {
-  return clamp(Math.floor(power / POWER_PER_LEVEL) + 1, LEVEL_MIN, LEVEL_MAX)
+export function levelForSpeed(speed) {
+  return clamp(Math.floor(speed / SPEED_PER_LEVEL) + 1, LEVEL_MIN, LEVEL_MAX)
 }
 
 export function rebirthRequirement(rebirth) {
   return (rebirth + 1) * REBIRTH_LEVEL_STEP
 }
 
-// Where the given Power sits inside its current level, for the HUD level
-// bar: `into` Power earned toward `span` (POWER_PER_LEVEL) needed for the
+// Where the given Speed sits inside its current level, for the HUD level
+// bar: `into` Speed earned toward `span` (SPEED_PER_LEVEL) needed for the
 // next level, and `frac` (0..1) for the fill width. `total` is the player's
-// whole Power and `needed` the whole-Power threshold that trips the next
+// whole Speed and `needed` the whole-Speed threshold that trips the next
 // level. At LEVEL_MAX the bar reads full and `needed` equals `total`.
-export function levelProgress(power) {
-  const level = levelForPower(power)
-  const total = Math.floor(power)
+export function levelProgress(speed) {
+  const level = levelForSpeed(speed)
+  const total = Math.floor(speed)
   if (level >= LEVEL_MAX) {
-    return { level, into: POWER_PER_LEVEL, span: POWER_PER_LEVEL, frac: 1, total, needed: total }
+    return { level, into: SPEED_PER_LEVEL, span: SPEED_PER_LEVEL, frac: 1, total, needed: total }
   }
-  const into = Math.floor(power - (level - LEVEL_MIN) * POWER_PER_LEVEL)
+  const into = Math.floor(speed - (level - LEVEL_MIN) * SPEED_PER_LEVEL)
   return {
     level,
     into,
-    span: POWER_PER_LEVEL,
-    frac: clamp(into / POWER_PER_LEVEL, 0, 1),
+    span: SPEED_PER_LEVEL,
+    frac: clamp(into / SPEED_PER_LEVEL, 0, 1),
     total,
-    needed: (level - LEVEL_MIN + 1) * POWER_PER_LEVEL,
+    needed: (level - LEVEL_MIN + 1) * SPEED_PER_LEVEL,
   }
 }
 
@@ -74,4 +78,18 @@ export function levelProgress(power) {
 // the HUD button's visibility check both call this, so they can never disagree.
 export function canAcceptRebirth(level, rebirth) {
   return rebirth < REBIRTH_MAX && level >= rebirthRequirement(rebirth)
+}
+
+// Player ground speed (systems/playerMovement.js's move target, m/s) scales
+// with the Speed stat's derived level — walking is both how Speed is earned
+// (systems/speedGain.js) and what it buys. Linear from WALK_SPEED_BASE (the
+// project's original fixed SPEED=6) up to WALK_SPEED_MAX, then flat — a hard
+// cap rather than following level all the way to LEVEL_MAX, since the Speed
+// stat itself grows into the trillions and movement can't scale with it.
+export const WALK_SPEED_BASE = envInt('VITE_WALK_SPEED_BASE', 6) // m/s at level 1
+export const WALK_SPEED_PER_LEVEL = envInt('VITE_WALK_SPEED_PER_LEVEL', 0.05) // m/s added per level above 1
+export const WALK_SPEED_MAX = envInt('VITE_WALK_SPEED_MAX', 16) // m/s hard cap, reached at level 200
+
+export function walkSpeedForLevel(level) {
+  return clamp(WALK_SPEED_BASE + (level - LEVEL_MIN) * WALK_SPEED_PER_LEVEL, WALK_SPEED_BASE, WALK_SPEED_MAX)
 }

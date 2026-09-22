@@ -55,11 +55,11 @@ export default function LevelBar() {
 
     const paint = () => {
       last = performance.now()
-      const { power, rebirth } = useGameStore.getState()
-      const { level, frac, total, needed } = levelProgress(power)
+      const { speed, rebirth } = useGameStore.getState()
+      const { level, frac, total, needed } = levelProgress(speed)
       if (rebirthRef.current)
         rebirthRef.current.style.display = canAcceptRebirth(level, rebirth) ? 'inline-block' : 'none'
-      if (captionRef.current) captionRef.current.textContent = `${formatShort(power)} Power`
+      if (captionRef.current) captionRef.current.textContent = `${formatShort(speed)} Speed`
       if (levelRef.current) levelRef.current.textContent = `Level ${level}`
       if (countRef.current) countRef.current.textContent = `${formatShort(total)} / ${formatShort(needed)}`
       if (fillRef.current) fillRef.current.style.width = `${(frac * 100).toFixed(2)}%`
@@ -159,7 +159,7 @@ export default function LevelBar() {
             background: LEVEL_BAR_CAPTION_BAND,
           }}
         >
-          1 Power
+          1 Speed
         </span>
       </div>
 

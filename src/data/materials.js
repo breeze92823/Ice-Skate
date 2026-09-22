@@ -11,4 +11,6 @@ export const MATERIAL_PBR = {
   TREADMILL_SCREEN_BEZEL: { roughness: 0.6, metalness: 0.3 },
   TREADMILL_SCREEN_FACE: { roughness: 0.35, metalness: 0 },
   GIANT_BALL: { roughness: 0.4, metalness: 0.05 }, // smooth-ish plastic/rubber sphere
+  SIDE_WALL: { roughness: 0.9, metalness: 0 }, // Stage1 boundary guard walls — tune independently of GROUND
+  STAGE_WALL: { roughness: 0.05, metalness: 0 }, // ~80% transparent glass stage dividers — smooth/glossy dielectric
 }

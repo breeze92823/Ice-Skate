@@ -1,4 +1,4 @@
-// Action power-gain popup tunables. Every Action that raises Power spawns
+// Speed-gain popup tunables. Every walking tick that raises Speed spawns
 // one of these — the public/ui/action_popup.png badge with a "+N" readout —
 // near the player. Simulated by systems/actionPopups.js, drawn by
 // components/hud/ActionPopups.jsx as DOM siblings of the canvas.

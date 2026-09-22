@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { afkState } from '../../systems/afk.js'
-import { hexPowerPadState } from '../../systems/hexPowerPad.js'
+import { hexSpeedPadState } from '../../systems/hexPowerPad.js'
 import { merchantState } from '../../systems/merchant.js'
 import { interactHoldState } from '../../systems/interactHold.js'
 import { settings } from '../../systems/settingsState.js'
@@ -84,7 +84,7 @@ function HudModal({ title, onClose, isTouch, children }) {
   )
 }
 
-// Opened by the Rebirth button. Confirms the trade of current Power for a
+// Opened by the Rebirth button. Confirms the trade of current Speed for a
 // rebirth point rather than firing it on a single click.
 function RebirthWindow({ rebirth, canRebirth, onConfirm, onClose, isTouch }) {
   const requirement = rebirthRequirement(rebirth)
@@ -760,16 +760,16 @@ export default function Hud() {
     const id = setInterval(() => {
       const prompt = hexPadPromptRef.current
       if (!prompt) return
-      const index = hexPowerPadState.nearIndex
+      const index = hexSpeedPadState.nearIndex
       if (index === null || afkState.active || afkState.nearTargetId) {
         prompt.setText(null)
         return
       }
       const { ownedHexPads, equippedHexPad } = useGameStore.getState()
       if (ownedHexPads.has(index)) {
-        prompt.setText(equippedHexPad === index ? null : 'Press E to Equip Laser')
+        prompt.setText(equippedHexPad === index ? null : 'Press E to Equip Pad')
       } else {
-        prompt.setText('Press E to Buy Laser')
+        prompt.setText('Press E to Buy Pad')
       }
       prompt.setHoldProgress(interactHoldState.progress)
     }, 100)
@@ -780,7 +780,7 @@ export default function Hud() {
     const id = setInterval(() => {
       const prompt = merchantPromptRef.current
       if (!prompt) return
-      const visible = merchantState.near && !afkState.active && !afkState.nearTargetId && hexPowerPadState.nearIndex === null
+      const visible = merchantState.near && !afkState.active && !afkState.nearTargetId && hexSpeedPadState.nearIndex === null
       prompt.setText(visible ? 'Press E to Aura' : null)
       prompt.setHoldProgress(interactHoldState.progress)
     }, 100)
@@ -836,7 +836,7 @@ export default function Hud() {
       {/* Top-centre multiplayer status pill. */}
       <NetStatus />
 
-      {/* Per-Action "+N" power badges around the player. Owns its own rAF
+      {/* Per-gain "+N" speed badges around the player. Owns its own rAF
          loop and never re-renders. */}
       <ActionPopups />
 
