@@ -1,11 +1,12 @@
-// The avatar run cycle. PlayerAvatar.jsx builds one of these alongside the
+// The avatar skate cycle. PlayerAvatar.jsx builds one of these alongside the
 // rig and ticks it each frame.
 //
 // Two paths, preferring Bloxity's own animation:
 //   1. player.glb ships a clip matching GAIT.runClip -> drive it with an
 //      AnimationMixer, cross-faded under an idle clip when present.
-//   2. no such clip -> a generated four-bone swing on ArmL1/ArmR1/LegL1/LegR1
-//      plus a Spine1 lean and a body bob.
+//   2. no such clip -> a generated push-glide skating stride on
+//      ArmL1/ArmR1/LegL1/LegR1 plus a Spine1 forward crouch, lateral
+//      weight-shift sway, and a body bob.
 //
 // Everything here is null-safe: a missing bone or a total failure just
 // leaves the avatar static, the same way a failed load leaves Player on the
@@ -13,11 +14,13 @@
 import * as THREE from 'three'
 import { GAIT } from '../data/bloxity.js'
 
-// phase offset per limb: legs are half a cycle apart; each arm is
-// anti-phase to the leg on its own side (contralateral swing).
+// phase offset per limb: legs are half a cycle apart (one pushes off while
+// the other glides); each arm is anti-phase to the leg on its own side
+// (contralateral swing, for balance). `side` signs which way a leg splays
+// outward on its push phase (left leg pushes left, right leg pushes right).
 const LIMBS = [
-  { name: 'LegL1', kind: 'leg', offset: 0 },
-  { name: 'LegR1', kind: 'leg', offset: Math.PI },
+  { name: 'LegL1', kind: 'leg', offset: 0, side: 1 },
+  { name: 'LegR1', kind: 'leg', offset: Math.PI, side: -1 },
   { name: 'ArmL1', kind: 'arm', offset: Math.PI },
   { name: 'ArmR1', kind: 'arm', offset: 0 },
 ]
@@ -34,11 +37,13 @@ export function makeGait(built) {
   const gait = {
     built,
     axis: AXES[GAIT.swingAxis] || AXES.x,
+    pushAxis: AXES[GAIT.pushAxis] || AXES.z,
     swayAxis: AXES[GAIT.swayAxis] || AXES.z,
     amp: 0, // eased 0..1 locomotion weight
     phase: 0, // radians along the stride
     idleTime: 0, // seconds, only advances while idle
     q: new THREE.Quaternion(),
+    q2: new THREE.Quaternion(),
     mixer: null,
     run: null,
     idle: null,
@@ -132,13 +137,27 @@ export function updateGait(gait, dt, speed01, grounded = true) {
   }
 
   for (const limb of gait.limbs) {
-    const swing = (limb.kind === 'arm' ? GAIT.armSwing : GAIT.legSwing) * gait.amp
-    gait.q.setFromAxisAngle(gait.axis, Math.sin(gait.phase + limb.offset) * swing)
-    limb.bone.quaternion.copy(limb.bind).premultiply(gait.q)
+    const phaseAngle = gait.phase + limb.offset
+    if (limb.kind === 'leg') {
+      // Forward/back glide plus an outward push-off that peaks mid-stride
+      // and draws the leg back under the body on the recovery half.
+      const strideAngle = Math.sin(phaseAngle) * GAIT.legSwing * gait.amp
+      const pushAngle = limb.side * GAIT.legPush * gait.amp * (0.5 + 0.5 * Math.sin(phaseAngle))
+      gait.q.setFromAxisAngle(gait.axis, strideAngle)
+      gait.q2.setFromAxisAngle(gait.pushAxis, pushAngle)
+      limb.bone.quaternion.copy(limb.bind).premultiply(gait.q2).premultiply(gait.q)
+    } else {
+      const swing = GAIT.armSwing * gait.amp
+      gait.q.setFromAxisAngle(gait.axis, Math.sin(phaseAngle) * swing)
+      limb.bone.quaternion.copy(limb.bind).premultiply(gait.q)
+    }
   }
   if (gait.spine) {
+    // Forward crouch plus a side-to-side weight shift onto whichever skate
+    // is currently gliding.
     gait.q.setFromAxisAngle(AXES.x, GAIT.lean * gait.amp)
-    gait.spine.quaternion.copy(gait.spineBind).premultiply(gait.q)
+    gait.q2.setFromAxisAngle(gait.swayAxis, Math.sin(gait.phase) * GAIT.hipSway * gait.amp)
+    gait.spine.quaternion.copy(gait.spineBind).premultiply(gait.q2).premultiply(gait.q)
   }
   gait.built.root.position.y = Math.abs(Math.sin(gait.phase)) * GAIT.bob * gait.amp
 }

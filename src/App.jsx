@@ -1,8 +1,18 @@
+import { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { ACESFilmicToneMapping, PCFSoftShadowMap, SRGBColorSpace } from 'three'
 import GameLoop from './components/GameLoop.jsx'
+import Water from './components/Water.jsx'
 import Ground from './components/Ground.jsx'
+import GroundBlocks from './components/GroundBlocks.jsx'
+import SlopeBlock from './components/SlopeBlock.jsx'
+import Road from './components/Road.jsx'
 import Player from './components/Player.jsx'
+import Treadmill from './components/Treadmill.jsx'
+import TeleportGate from './components/TeleportGate.jsx'
+import GiantBall from './components/GiantBall.jsx'
+import Sahur from './components/Sahur.jsx'
+import GlowFloorPanels from './components/GlowFloorPanels.jsx'
 import Hud from './components/hud/Hud.jsx'
 
 export default function App() {
@@ -37,8 +47,19 @@ export default function App() {
         />
 
         <GameLoop />
-        <Ground />
+        <Water />
+        <Suspense fallback={null}>
+          <Ground />
+          <GroundBlocks />
+          <SlopeBlock />
+          <Sahur />
+          <GlowFloorPanels />
+        </Suspense>
+        <Road />
         <Player />
+        <Treadmill />
+        <TeleportGate />
+        <GiantBall />
       </Canvas>
       <Hud />
     </>

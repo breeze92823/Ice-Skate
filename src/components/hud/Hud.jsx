@@ -22,6 +22,7 @@ import NetStatus from './NetStatus.jsx'
 import AuthPanel from './AuthPanel.jsx'
 import IdentityChip from './IdentityChip.jsx'
 import ActionResult from './ActionResult.jsx'
+import TeleportPanel from './TeleportPanel.jsx'
 import { actionResultState, showActionResult } from '../../systems/actionResult.js'
 import { useSettings, useTouchMode } from './hooks.js'
 
@@ -811,6 +812,9 @@ export default function Hud() {
       />
 
       <LeftCenterControls />
+
+      {/* Stage picker — appears while near TeleportGate.jsx's portal. */}
+      <TeleportPanel />
 
       {/* Top-left identity chip: dev-only diagnostic — renders null
          otherwise. Event-driven, never per frame. */}

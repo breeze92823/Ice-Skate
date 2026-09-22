@@ -77,20 +77,27 @@ export const BASE_MODEL_URL = `${AVATAR_CDN}/player.glb`
 // empty set renders the base rig exactly as it ships.
 export const DEFAULT_EQUIPPED = {}
 
-// --- Locomotion: the run cycle -----------------------------------------
+// --- Locomotion: the skate cycle ----------------------------------------
 // The base rig is R6-style: single-segment limbs (ArmL1/ArmR1/LegL1/LegR1)
 // and a two-node spine. If player.glb ships its own clip whose name matches
 // `runClip`, avatarAnim.js plays that through an AnimationMixer instead and
-// ignores every number below; these only drive the generated fallback.
+// ignores every number below; these only drive the generated fallback, which
+// is a push-glide skating stride rather than a run: each leg splays outward
+// (pushAxis) on its push phase and draws back under the body on its glide
+// phase, in addition to the forward/back swing (swingAxis) shared with the
+// arms.
 export const GAIT = {
   runClip: /run|sprint|jog/i,
   idleClip: /idle|stand/i,
-  strideHz: 2.6,
-  legSwing: 0.9,
-  armSwing: 0.55,
-  lean: 0.12,
-  bob: 0.06,
+  strideHz: 1.7,
+  legSwing: 0.45,
+  legPush: 0.5,
+  armSwing: 0.35,
+  lean: 0.22,
+  hipSway: 0.12,
+  bob: 0.03,
   swingAxis: 'x',
+  pushAxis: 'z',
   blendHz: 8,
 
   swayAxis: 'z',

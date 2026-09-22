@@ -1,11 +1,17 @@
 import { useThree, useFrame } from '@react-three/fiber'
 import { tick } from '../systems/timeScale.js'
 import { step } from '../systems/playerMovement.js'
+import { step as stepGiantBall } from '../systems/giantBallPhysics.js'
+import { step as stepGiantBallCrush } from '../systems/giantBallCrush.js'
+import { step as stepSahurFollow } from '../systems/sahurFollow.js'
+import { step as stepSahurCrush } from '../systems/sahurCrush.js'
 import { update as updateCamera } from '../systems/cameraOrbit.js'
 import { step as stepPlayerHealth } from '../systems/playerHealth.js'
 import { step as stepAfk } from '../systems/afk.js'
 import { step as stepHexPowerPad } from '../systems/hexPowerPad.js'
+import { step as stepGlowFloorPanel } from '../systems/glowFloorPanel.js'
 import { step as stepMerchant } from '../systems/merchant.js'
+import { step as stepTeleportGate } from '../systems/teleportGate.js'
 import { step as stepInteract } from '../systems/interact.js'
 import { step as stepActionPopups } from '../systems/actionPopups.js'
 import { inputState } from '../systems/input.js'
@@ -21,13 +27,21 @@ export default function GameLoop() {
     const dt = tick()
     stepPlayerHealth()
     step(dt)
+    stepGiantBall(dt)
+    stepGiantBallCrush()
+    stepSahurFollow(dt)
+    stepSahurCrush()
     updateCamera(camera, dt)
     // Project the player to the screen and age live popups before stepAction
     // below can spawn new ones this frame.
     stepActionPopups(dt, camera)
     stepAfk()
     stepHexPowerPad()
+    stepGlowFloorPanel()
     stepMerchant()
+    // Stage-select HUD panel's own proximity flag — a plain click target,
+    // not one of the hold-to-confirm zones stepInteract resolves below.
+    stepTeleportGate()
     // Resolves which (if any) of the three proximity zones above is the
     // shared hold-to-confirm gate's current target, and fires that zone's
     // action once the player has held E against it.
