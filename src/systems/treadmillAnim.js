@@ -1,5 +1,6 @@
 import { player } from './playerState.js'
 import { TREADMILLS } from '../data/treadmill.js'
+import { useGameStore } from '../store/useGameStore.js'
 
 // Per-treadmill belt-scroll state — mutated in place, read every frame by
 // components/TreadmillProp.jsx (belt texture's V offset) without a React
@@ -38,9 +39,12 @@ function isOnDeck({ position, rotationY, deckWidth, deckDepth }) {
 
 export function step(dt) {
   let occupied = false
+  const rebirth = useGameStore.getState().rebirth
   for (const treadmill of TREADMILLS) {
     const state = treadmillAnim.get(treadmill.name)
-    state.occupied = isOnDeck(treadmill)
+    // Below the deck's own rebirthRequired, it never registers as occupied —
+    // no belt scroll, no forced walk gait, no treadmill-walking Speed gain.
+    state.occupied = rebirth >= treadmill.rebirthRequired && isOnDeck(treadmill)
     if (state.occupied) {
       occupied = true
       state.offset = (state.offset + (treadmill.beltSpeed / treadmill.deckDepth) * dt) % 1

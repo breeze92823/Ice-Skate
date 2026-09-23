@@ -22,7 +22,13 @@ export default function Treadmills() {
         />
       ))}
       {TREADMILLS.map((t) => (
-        <TreadmillLabel key={t.name} position={t.position} value={t.speed} color={t.labelColor} />
+        <TreadmillLabel
+          key={t.name}
+          position={t.position}
+          value={t.speed}
+          color={t.labelColor}
+          rebirthRequired={t.rebirthRequired}
+        />
       ))}
     </>
   )

@@ -65,10 +65,16 @@ function layoutRow(position, rotationY, instances) {
 // footprint (below) and collision (systems/treadmillCollision.js) both
 // scale with it too, so a bigger deck is still standable/collidable at its
 // drawn size, not just visually bigger.
+// `rebirthRequired` gates the deck itself (systems/treadmillAnim.js's
+// isOnDeck check) — below that many rebirths (store's `rebirth`), stepping on
+// the deck doesn't register as occupied at all, so the belt doesn't scroll,
+// PlayerAvatar.jsx's forced walk gait doesn't kick in, and speedGain.js's
+// treadmill-counts-as-walking gain never fires. TreadmillLabel.jsx reads it
+// to show "Required Rebirth N" in place of the normal speed caption.
 const INSTANCES = [
-  { name: 'Treadmill1', speed: 1, scale: 1, frameLight: '#7b8492', frameDark: '#535b68', armColor: '#2f333b', labelColor: '#ffd21e' },
-  { name: 'Treadmill2', speed: 2, scale: 1.5, frameLight: '#7ba686', frameDark: '#4a6b53', armColor: '#22331f', labelColor: '#6be36a' },
-  { name: 'Treadmill3', speed: 3, scale: 2, frameLight: '#a67b7f', frameDark: '#6b4850', armColor: '#331f22', labelColor: '#ff5f6d' },
+  { name: 'Treadmill1', speed: 1, scale: 1, rebirthRequired: 0, frameLight: '#7b8492', frameDark: '#535b68', armColor: '#2f333b', labelColor: '#ffd21e' },
+  { name: 'Treadmill2', speed: 2, scale: 1.5, rebirthRequired: 2, frameLight: '#7ba686', frameDark: '#4a6b53', armColor: '#22331f', labelColor: '#6be36a' },
+  { name: 'Treadmill3', speed: 3, scale: 2, rebirthRequired: 3, frameLight: '#a67b7f', frameDark: '#6b4850', armColor: '#331f22', labelColor: '#ff5f6d' },
 ]
 
 const ROW_POSITIONS = layoutRow(TREADMILL_POSITION, TREADMILL_ROTATION_Y, INSTANCES)

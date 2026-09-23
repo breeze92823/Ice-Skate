@@ -45,7 +45,7 @@ export const STAGE_WALLS = [
     position: [-0.008928011171519756, 11.1223726272583, 20.595752716064453],
     size: STAGE_WALL_SIZE,
     stage: 1,
-    recommendedLevel: 5, // placeholder
+    recommendedLevel: 1, // placeholder
   },
   {
     name: 'StageWall.002',
