@@ -15,15 +15,12 @@ import {
   LEVEL_BAR_TEXT_STROKE,
   LEVEL_BAR_CAPTION_FONT_PX,
   LEVEL_BAR_LABEL_FONT_PX,
-  LEVEL_BAR_ICON_SIZE,
-  LEVEL_BAR_ICON_OVERHANG,
   LEVEL_BAR_BOTTOM,
   LEVEL_BAR_TRANSITION_MS,
   LEVEL_BAR_FILL_GRADIENT,
   LEVEL_BAR_CAPTION_BAND,
   LEVEL_BAR_CAPTION_BAND_PAD_X,
   LEVEL_BAR_CAPTION_BAND_PAD_Y,
-  LEVEL_BAR_ICON_URL,
 } from '../../data/levelBar.js'
 
 // Solid cartoon outline for the overlaid text — an 8-direction black shadow
@@ -194,7 +191,7 @@ export default function LevelBar() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: `0 28px 0 ${Math.round(LEVEL_BAR_ICON_SIZE * 0.5)}px`,
+              padding: '0 28px',
             }}
           >
             <span ref={levelRef} style={{ font: LABEL_FONT, color: '#fff', textShadow: TEXT_OUTLINE }}>
@@ -205,21 +202,6 @@ export default function LevelBar() {
             </span>
           </div>
         </div>
-
-        <img
-          src={LEVEL_BAR_ICON_URL}
-          alt=""
-          draggable={false}
-          style={{
-            position: 'absolute',
-            left: -LEVEL_BAR_ICON_SIZE * LEVEL_BAR_ICON_OVERHANG,
-            top: '50%',
-            width: LEVEL_BAR_ICON_SIZE,
-            height: LEVEL_BAR_ICON_SIZE,
-            transform: 'translateY(-50%)',
-            filter: 'drop-shadow(0 4px 5px rgba(0,0,0,0.4))',
-          }}
-        />
       </div>
     </div>
   )

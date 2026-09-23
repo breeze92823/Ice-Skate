@@ -46,13 +46,15 @@ export default function GameLoop() {
     // Project the player to the screen and age live popups before
     // stepSpeedGain/stepAction below can spawn new ones this frame.
     stepActionPopups(dt, camera)
+    // Before stepSpeedGain, so its treadmill-occupied check reflects this
+    // frame's deck position rather than last frame's.
+    stepTreadmillAnim(dt)
     // Walking-based Speed gain — every WALK_GAIN_INTERVAL seconds of
-    // unbroken movement input.
+    // unbroken movement input, or of standing on an occupied treadmill.
     stepSpeedGain(dt)
     stepAfk()
     stepHexPowerPad()
     stepGlowFloorPanel()
-    stepTreadmillAnim(dt)
     stepHammer(dt)
     stepHammerCrush()
     stepCrusherAnim(dt)

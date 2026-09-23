@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { Quaternion, Vector3 } from 'three'
 import { player } from '../systems/playerState.js'
 import PlayerAvatar from './PlayerAvatar.jsx'
+import EquippedSkates from './EquippedSkates.jsx'
 import { MATERIAL_PBR } from '../data/materials.js'
 import { GAIT } from '../data/bloxity.js'
 
@@ -46,6 +47,11 @@ export default function Player() {
           <boxGeometry args={[0.14, 0.14, 0.28]} />
           <meshStandardMaterial color="#ffd36b" {...MATERIAL_PBR.FLAT_PLACEHOLDER} />
         </mesh>
+        {/* No LegL1/LegR1 bones to group with on the capsule fallback, so the
+            equipped skate sits at a fixed stance width instead. Once the
+            Bloxity rig loads, PlayerAvatar.jsx groups it with each leg bone
+            instead and this pair is hidden along with the capsule. */}
+        <EquippedSkates />
       </group>
       <PlayerAvatar onReady={onAvatarReady} />
     </group>

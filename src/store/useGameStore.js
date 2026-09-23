@@ -12,6 +12,9 @@ import {
   WINS_MAX,
   SPEED_PER_GAIN_INITIAL,
   WALK_SPEED_BASE,
+  MOVE_SPEED_MIN,
+  MOVE_SPEED_MAX,
+  MOVE_SPEED_PER_LEVEL,
   levelForSpeed,
   canAcceptRebirth,
   clamp,
@@ -41,11 +44,17 @@ export const useGameStore = create((set, get) => ({
   // owned and equipped from the start.
   ownedHexPads: new Set([0]),
   equippedHexPad: 0,
-  // Physical walk speed (m/s) — WALK_SPEED_BASE (VITE_WALK_SPEED_BASE) plus
-  // the currently equipped skate's own moveSpeed, read as-is by
-  // systems/playerMovement.js. Seeded from tier 0 to match equippedHexPad's
-  // own default.
+  // Physical walk speed (m/s), read as-is by systems/playerMovement.js.
+  // Seeded from tier 0 (WALK_SPEED_BASE + its own moveSpeed) and recomputed
+  // the same way on equip/reset — but, like speed/wins, it's also a raw
+  // persisted field: hydrate() below trusts a saved moveSpeed directly
+  // (clamped) instead of only re-deriving it from equippedHexPad.
   moveSpeed: WALK_SPEED_BASE + HEX_SPEED_PAD_TIERS[0].moveSpeed,
+  // Permanent, per-level moveSpeed bonus (MOVE_SPEED_PER_LEVEL per level
+  // gained in gainSpeed) — kept separate from moveSpeed itself so equipHexPad
+  // can re-add it on top of a newly-equipped tier's base instead of losing it.
+  // Cleared back to 0 by acceptRebirth/resetProgress.
+  moveSpeedLevelBonus: 0,
   ownedAuras: new Set(),
   equippedAura: null,
   ownedTargets: new Set(),
@@ -63,7 +72,15 @@ export const useGameStore = create((set, get) => ({
       const gain = Math.floor(state.speedPerGain * (state.rebirth + 1) * mult * auraMult)
       const speed = clamp(state.speed + gain, SPEED_MIN, SPEED_MAX)
       applied = speed - state.speed
-      return derive({ ...state, speed })
+      const next = derive({ ...state, speed })
+      const levelsGained = next.level - state.level
+      if (levelsGained <= 0) return next
+      const bonus = levelsGained * MOVE_SPEED_PER_LEVEL
+      return {
+        ...next,
+        moveSpeedLevelBonus: clamp(state.moveSpeedLevelBonus + bonus, 0, MOVE_SPEED_MAX),
+        moveSpeed: clamp(state.moveSpeed + bonus, MOVE_SPEED_MIN, MOVE_SPEED_MAX),
+      }
     })
     return applied
   },
@@ -73,13 +90,17 @@ export const useGameStore = create((set, get) => ({
   acceptRebirth() {
     const state = get()
     if (!canAcceptRebirth(state.level, state.rebirth)) return
-    set((s) =>
-      derive({
+    set((s) => {
+      const tier = HEX_SPEED_PAD_TIERS[s.equippedHexPad]
+      const moveSpeed = tier ? WALK_SPEED_BASE + tier.moveSpeed : s.moveSpeed
+      return derive({
         ...s,
         rebirth: clamp(s.rebirth + 1, REBIRTH_MIN, REBIRTH_MAX),
         speed: SPEED_INITIAL,
-      }),
-    )
+        moveSpeedLevelBonus: 0,
+        moveSpeed,
+      })
+    })
   },
 
   // Called the frame the player first steps onto a win panel — not wired to
@@ -105,7 +126,11 @@ export const useGameStore = create((set, get) => ({
     if (!state.ownedHexPads.has(index)) return
     const tier = HEX_SPEED_PAD_TIERS[index]
     if (!tier) return
-    set({ equippedHexPad: index, speedPerGain: tier.speedPerGain, moveSpeed: WALK_SPEED_BASE + tier.moveSpeed })
+    set((s) => ({
+      equippedHexPad: index,
+      speedPerGain: tier.speedPerGain,
+      moveSpeed: clamp(WALK_SPEED_BASE + tier.moveSpeed + s.moveSpeedLevelBonus, MOVE_SPEED_MIN, MOVE_SPEED_MAX),
+    }))
   },
 
   // Called from components/hud/Hud.jsx's AuraEntry wins button. Buying
@@ -170,6 +195,7 @@ export const useGameStore = create((set, get) => ({
         ownedHexPads: new Set([0]),
         equippedHexPad: 0,
         moveSpeed: WALK_SPEED_BASE + HEX_SPEED_PAD_TIERS[0].moveSpeed,
+        moveSpeedLevelBonus: 0,
         ownedAuras: new Set(),
         equippedAura: null,
         ownedTargets: new Set(),
@@ -194,6 +220,9 @@ export const useGameStore = create((set, get) => ({
       const equippedAura = ownedAuras.has(saved.equippedAura) ? saved.equippedAura : null
       const ownedTargets = new Set(Array.isArray(saved.ownedTargets) ? saved.ownedTargets : [])
       const tier = HEX_SPEED_PAD_TIERS[equippedHexPad]
+      const moveSpeedLevelBonus = clamp(Number(saved.moveSpeedLevelBonus) || 0, 0, MOVE_SPEED_MAX)
+      const fallbackMoveSpeed = tier ? WALK_SPEED_BASE + tier.moveSpeed + moveSpeedLevelBonus : s.moveSpeed
+      const moveSpeed = clamp(Number(saved.moveSpeed) || fallbackMoveSpeed, MOVE_SPEED_MIN, MOVE_SPEED_MAX)
       return derive({
         ...s,
         speed,
@@ -202,7 +231,8 @@ export const useGameStore = create((set, get) => ({
         ownedHexPads,
         equippedHexPad,
         speedPerGain: tier ? tier.speedPerGain : s.speedPerGain,
-        moveSpeed: tier ? WALK_SPEED_BASE + tier.moveSpeed : s.moveSpeed,
+        moveSpeedLevelBonus,
+        moveSpeed,
         ownedAuras,
         equippedAura,
         ownedTargets,

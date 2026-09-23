@@ -10,11 +10,15 @@ import { health as playerHealth } from './playerHealth.js'
 import { useGameStore } from '../store/useGameStore.js'
 import { spawnActionPopup } from './actionPopups.js'
 import { WALK_GAIN_INTERVAL } from '../data/progression.js'
+import { anyTreadmillOccupied } from './treadmillAnim.js'
 
 let walkElapsed = 0
 
 export function step(dt) {
-  const walking = inputState.move.x !== 0 || inputState.move.z !== 0
+  // Standing on an occupied treadmill deck forces the same walking gait as
+  // real movement input (see PlayerAvatar.jsx) — count it as walking here
+  // too, so working a treadmill gains Speed exactly like walking does.
+  const walking = inputState.move.x !== 0 || inputState.move.z !== 0 || anyTreadmillOccupied.value
 
   if (playerHealth.dead || !walking) {
     walkElapsed = 0

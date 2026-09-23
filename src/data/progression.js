@@ -18,12 +18,25 @@ export const SPEED_MAX = 1_000_000_000_000
 // Overrides the free starter skate's (tier 0) physical walk speed — see
 // data/hexPowerPad.js's HEX_SPEED_PAD_TIERS. Unrelated to the Speed
 // stat/level above.
-export const WALK_SPEED_BASE = envInt('VITE_WALK_SPEED_BASE', 1)
+export const WALK_SPEED_BASE = envInt('VITE_WALK_SPEED_BASE', 0)
+
+// Clamp bounds for the store's persisted moveSpeed field (physical walk
+// speed, m/s) — same clamp-on-hydrate treatment as SPEED_MIN/SPEED_MAX and
+// WINS_MIN/WINS_MAX, just generous enough to never clip a legitimate
+// equipped-tier value while still rejecting corrupt/negative saved data.
+export const MOVE_SPEED_MIN = 0
+export const MOVE_SPEED_MAX = 1_000_000
 
 export const LEVEL_INITIAL = 1
 export const LEVEL_MIN = 1
 export const LEVEL_MAX = 50_000
 export const SPEED_PER_LEVEL = 50 // level = floor(speed / SPEED_PER_LEVEL) + 1
+
+// Permanent moveSpeed bonus granted per level gained (store's gainSpeed).
+// Stacks on top of whatever the equipped skate grants (store re-adds it on
+// every equipHexPad) and persists through equip changes, but is cleared back
+// to 0 by acceptRebirth/resetProgress along with Speed/level themselves.
+export const MOVE_SPEED_PER_LEVEL = 1
 
 export const REBIRTH_INITIAL = envInt('VITE_REBIRTH_INITIAL', 0)
 export const REBIRTH_MIN = 0

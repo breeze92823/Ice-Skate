@@ -1,11 +1,12 @@
-import { useEffect, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useEffect, useRef, useState } from 'react'
+import { useFrame, createPortal } from '@react-three/fiber'
 import { subscribe } from '../systems/avatarState.js'
 import { applyProportions, buildAvatar, disposeAvatar } from '../systems/avatarModel.js'
 import { makeGait, updateGait, disposeGait } from '../systems/avatarAnim.js'
 import { player, setDims, resetDims } from '../systems/playerState.js'
 import { anyTreadmillOccupied } from '../systems/treadmillAnim.js'
 import { TREADMILL_WALK_ANIM_SPEED } from '../data/treadmill.js'
+import { EquippedLegSkate } from './EquippedSkates.jsx'
 
 // Mounts the Bloxity avatar under Player's transform group. Presentation
 // only: all loading, rig maths and the run cycle live in
@@ -15,6 +16,11 @@ import { TREADMILL_WALK_ANIM_SPEED } from '../data/treadmill.js'
 export default function PlayerAvatar({ onReady }) {
   const groupRef = useRef(null)
   const gaitRef = useRef(null)
+  // LegL1/LegR1 (+ each leg's own sole offset) once a rig is built — drives
+  // the createPortal pair below that groups the equipped skate with each
+  // bone. React state (not a ref) because it must trigger a render: the
+  // portal target itself is JSX.
+  const [legBones, setLegBones] = useState(null)
 
   useEffect(() => {
     let built = null
@@ -32,6 +38,7 @@ export default function PlayerAvatar({ onReady }) {
         built = null
       }
       resetDims()
+      setLegBones(null)
       onReady(false)
     }
 
@@ -57,6 +64,9 @@ export default function PlayerAvatar({ onReady }) {
       setDims(dims.radius, dims.height)
       groupRef.current.add(built.root)
       gaitRef.current = makeGait(built)
+      const legL = built.nodes.LegL1
+      const legR = built.nodes.LegR1
+      setLegBones(legL && legR ? { legL, legR, foot: built.legFoot } : null)
       onReady(true)
     }
 
@@ -89,5 +99,10 @@ export default function PlayerAvatar({ onReady }) {
     updateGait(gait, Math.min(delta, 0.1), speed, player.grounded, player.velocity.y)
   })
 
-  return <group ref={groupRef} />
+  return (
+    <group ref={groupRef}>
+      {legBones && createPortal(<EquippedLegSkate {...legBones.foot.L} />, legBones.legL)}
+      {legBones && createPortal(<EquippedLegSkate {...legBones.foot.R} />, legBones.legR)}
+    </group>
+  )
 }

@@ -2,7 +2,9 @@ import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { MATERIAL_PBR } from '../data/materials.js'
 import { SKATE_RACK_SHAPE, skateRackColX, skateRackRowTopY, skateRackRowZ } from '../data/skateRack.js'
+import { FIRE_EFFECT_TIER_INDEX } from '../data/skateFireEffect.js'
 import { SingleSkate } from './IceSkateShoes.jsx'
+import SkateFireEffect from './SkateFireEffect.jsx'
 import { useGameStore } from '../store/useGameStore.js'
 
 // One pickup on the bench: a pad plus a single IceSkateShoes.jsx skate
@@ -18,7 +20,6 @@ import { useGameStore } from '../store/useGameStore.js'
 const { padWidth: PAD_W, padDepth: PAD_D, padHeight: PAD_H, itemRadius: ITEM_R } = SKATE_RACK_SHAPE
 const ITEM_SCALE = 0.425 // half of the previous 0.85, so it doesn't crowd the pad's edges
 const SPIN_SPEED = 1.5 // radians/sec around local Y
-const LOCKED_COLOR = '#5a5f66' // muted stand-in tint for a not-yet-owned skate
 const PAD_LOCKED_COLOR = '#e8484f' // red — not bought
 const PAD_OWNED_COLOR = '#e9edf1' // white — bought, not equipped
 const PAD_EQUIPPED_COLOR = '#5fe37a' // green — equipped
@@ -61,8 +62,14 @@ export default function SkateRackItem({ index, row, col, itemColor, glow }) {
       )}
 
       <group ref={spinRef} position={[0, padTopY, 0]} scale={ITEM_SCALE}>
-        <SingleSkate bootColor={owned ? itemColor : LOCKED_COLOR} />
+        <SingleSkate bootColor={itemColor} />
       </group>
+
+      {index === FIRE_EFFECT_TIER_INDEX && (
+        <group position={[0, padTopY, 0]}>
+          <SkateFireEffect />
+        </group>
+      )}
     </group>
   )
 }

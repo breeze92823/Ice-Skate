@@ -1,10 +1,12 @@
 // HUD level-bar tunables. The bar sits bottom-centre of the screen: a
 // "<Speed> Speed" caption, a rounded track that fills yellow -> orange -> red
-// as Speed climbs toward the next level, "Level N" and "<into> / <span>"
-// overlaid on it, and the public/ui/action_popup.png starburst pinned to its
-// left edge. Drawn by components/hud/LevelBar.jsx as a DOM sibling of the
-// canvas, never re-rendering per frame — its readouts are written to the DOM
-// from a throttled store subscription.
+// as Speed climbs toward the next level, and "Level N" / "<into> / <span>"
+// overlaid on it. Drawn by components/hud/LevelBar.jsx as a DOM sibling of
+// the canvas, never re-rendering per frame — its readouts are written to the
+// DOM from a throttled store subscription.
+//
+// LEVEL_BAR_ICON_SIZE/OVERHANG/URL are also shared by RebirthLevelBar.jsx
+// for its own badge in the Rebirth confirm modal.
 
 // Milliseconds between textContent / fill-width writes — a ~10Hz throttle
 // for numeric HUD readouts.

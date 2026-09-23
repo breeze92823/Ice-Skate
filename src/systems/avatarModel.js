@@ -131,6 +131,60 @@ function firstMesh(root) {
   return found
 }
 
+const _footToLocal = new THREE.Matrix4()
+const _footPos = new THREE.Vector3()
+
+// The last bone in a straight single-child chain starting at `bone` (e.g.
+// LegL1 -> LegL2 -> LegL2_leaf) — the terminal joint the rig's own skeleton
+// authors as the end of the limb. Stops as soon as a bone has zero or more
+// than one Bone child, so a branching or childless rig just returns `bone`
+// itself.
+function terminalBone(bone) {
+  let node = bone
+  while (node) {
+    const boneChildren = node.children.filter((c) => c.isBone)
+    if (boneChildren.length !== 1) return node
+    node = boneChildren[0]
+  }
+  return bone
+}
+
+// Where a leg bone's own foot/ankle joint sits, expressed in `bone`'s local
+// space — the base rig's legs are single-segment R6-style bones
+// (data/bloxity.js) that rotate about their own top (the hip), so a shoe
+// parented straight onto LegL1/LegR1 needs this offset to land at the sole
+// instead of the hip. The rig's own leg length isn't published anywhere, and
+// the visible leg mesh is a SkinnedMesh whose geometry lives in bind space
+// unrelated to any single bone's local frame, so this walks the actual bone
+// chain (terminalBone) and reads the terminal joint's real transform instead
+// of guessing from geometry.
+function footOffsetY(bone) {
+  if (!bone) return 0
+  const foot = terminalBone(bone)
+  if (foot === bone) return 0
+  bone.updateWorldMatrix(true, false)
+  foot.updateWorldMatrix(true, false)
+  _footToLocal.copy(bone.matrixWorld).invert().multiply(foot.matrixWorld)
+  _footPos.setFromMatrixPosition(_footToLocal)
+  return _footPos.y
+}
+
+// Bone-local Y offset to the sole (footOffsetY) plus the inverse of the
+// bone's own bind-pose rotation. LegL1/LegR1's bind quaternion is not
+// identity — the rig points a leg's local Y/Z axes down/sideways rather than
+// matching world space, which is fine for the leg's own boxy mesh but would
+// plant a naively-parented shoe sideways and upside down. Applying this
+// inverse as the shoe group's own (fixed, one-time) local rotation cancels
+// exactly that static misalignment while leaving the bone's *dynamic* gait
+// rotation (avatarAnim.js premultiplies onto the bind quaternion every
+// frame) untouched, so the shoe still swings with the stride.
+function legFootTransform(bone) {
+  return {
+    y: footOffsetY(bone),
+    quat: bone ? bone.quaternion.clone().invert().toArray() : [0, 0, 0, 1],
+  }
+}
+
 async function applySkin(built, id) {
   if (!isEquipped(id)) return
   let texture
@@ -231,6 +285,14 @@ export async function buildAvatar(equipped, token) {
     slotObjects: [],
     skinned: firstSkinnedMesh(root),
     clips: gltf.animations || [],
+    // Per-leg sole offset + bind-rotation correction — see
+    // legFootTransform. Read by PlayerAvatar.jsx to plant the equipped skate
+    // at the sole of LegL1/LegR1, right-side up, rather than at the bone's
+    // hip pivot in the bone's own tilted rest orientation.
+    legFoot: {
+      L: legFootTransform(nodes.LegL1),
+      R: legFootTransform(nodes.LegR1),
+    },
   }
 
   const slots = equipped || {}

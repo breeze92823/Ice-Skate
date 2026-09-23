@@ -45,19 +45,22 @@ export const SKATE_RACK_SHAPE = {
 // state in SkateRackItem.jsx (red/white/green), not authored here. `glow`
 // here is only the fixed rare-item sparkle on tiers 7 and 10, unrelated to
 // equip state.
+// itemColor here is a fixed bright/saturated palette (evenly spaced hues,
+// high saturation+lightness) rather than the previous muted/tiered look —
+// every pad reads as vivid regardless of row.
 const RAW_TIERS = [
   // Row 0 — front, low shelf
-  { speed: 1, winsRequired: 0, itemColor: '#8a7a6b' },
-  { speed: 2, winsRequired: 1, itemColor: '#e8484f' },
-  { speed: 5, winsRequired: 15, itemColor: '#4f9dff' },
-  { speed: 25, winsRequired: 50, itemColor: '#7ed321' },
-  { speed: 50, winsRequired: 250, itemColor: '#e9edf1' },
+  { speed: 1, winsRequired: 0, itemColor: '#ff3b30' },
+  { speed: 2, winsRequired: 1, itemColor: '#ff9500' },
+  { speed: 5, winsRequired: 15, itemColor: '#d1ff1a' },
+  { speed: 25, winsRequired: 50, itemColor: '#4dff1a' },
+  { speed: 50, winsRequired: 250, itemColor: '#1aff70' },
   // Row 1 — back, raised shelf
-  { speed: 100, winsRequired: 1200, itemColor: '#2b2f36' },
-  { speed: 250, winsRequired: 7500, itemColor: '#3fae4f', glow: '#5fe37a' },
-  { speed: 500, winsRequired: 25000, itemColor: '#ffcf3f' },
-  { speed: 1000, winsRequired: 125000, itemColor: '#e7a9ff' },
-  { speed: 2000, winsRequired: 250000, itemColor: '#7b3fd6', glow: '#b06bff' },
+  { speed: 100, winsRequired: 1200, itemColor: '#1affff' },
+  { speed: 250, winsRequired: 7500, itemColor: '#1a70ff', glow: '#6fa8ff' },
+  { speed: 500, winsRequired: 25000, itemColor: '#701aff' },
+  { speed: 1000, winsRequired: 125000, itemColor: '#d11aff' },
+  { speed: 2000, winsRequired: 250000, itemColor: '#ff1a8c', glow: '#ff6fc4' },
 ]
 
 export const SKATE_RACK_TIERS = RAW_TIERS.map((tier, i) => ({
