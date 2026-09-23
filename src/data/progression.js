@@ -80,16 +80,6 @@ export function canAcceptRebirth(level, rebirth) {
   return rebirth < REBIRTH_MAX && level >= rebirthRequirement(rebirth)
 }
 
-// Player ground speed (systems/playerMovement.js's move target, m/s) scales
-// with the Speed stat's derived level — walking is both how Speed is earned
-// (systems/speedGain.js) and what it buys. Linear from WALK_SPEED_BASE (the
-// project's original fixed SPEED=6) up to WALK_SPEED_MAX, then flat — a hard
-// cap rather than following level all the way to LEVEL_MAX, since the Speed
-// stat itself grows into the trillions and movement can't scale with it.
-export const WALK_SPEED_BASE = envInt('VITE_WALK_SPEED_BASE', 6) // m/s at level 1
-export const WALK_SPEED_PER_LEVEL = envInt('VITE_WALK_SPEED_PER_LEVEL', 0.05) // m/s added per level above 1
-export const WALK_SPEED_MAX = envInt('VITE_WALK_SPEED_MAX', 16) // m/s hard cap, reached at level 200
-
-export function walkSpeedForLevel(level) {
-  return clamp(WALK_SPEED_BASE + (level - LEVEL_MIN) * WALK_SPEED_PER_LEVEL, WALK_SPEED_BASE, WALK_SPEED_MAX)
-}
+// Player ground speed (systems/playerMovement.js's move target, m/s) — fixed,
+// not tied to the Speed stat/level shown in the UI.
+export const WALK_SPEED_BASE = envInt('VITE_WALK_SPEED_BASE', 6) // m/s

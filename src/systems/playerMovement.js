@@ -6,6 +6,7 @@ import { useGameStore } from '../store/useGameStore.js'
 import { GROUND_Y, WATER_Y, ISLAND_WIDTH, ISLAND_DEPTH, ISLAND_X, ISLAND_Z } from '../data/hub.js'
 import { GROUND_BLOCKS } from '../data/groundBlocks.js'
 import { SIDE_WALLS, SIDE_WALL_END_CAPS, SIDE_WALL_BULGES, SIDE_WALL_JOGS } from '../data/sideWalls.js'
+import { HUB_WALLS, HUB_DOOR_FILL } from '../data/hubWalls.js'
 import { STAGE2_SEGMENTS, STAGE2_JOGS } from '../data/stage2Walls.js'
 import { STAGE3_SEGMENTS, STAGE3_RAMP_JOGS, STAGE3_DOOR_FILLS } from '../data/stage3Walls.js'
 import { STAGE4_SEGMENTS, STAGE4_JOGS, STAGE4_DOOR_FILLS } from '../data/stage4Walls.js'
@@ -17,10 +18,11 @@ import { STAGE9_SEGMENTS, STAGE9_JOGS } from '../data/stage9Walls.js'
 import { STAGE10_SEGMENTS, STAGE10_DOOR_FILLS } from '../data/stage10Walls.js'
 import { STAGE11_SEGMENTS, STAGE11_JOGS, STAGE11_DOOR_FILLS } from '../data/stage11Walls.js'
 import { STAGE12_SEGMENTS, STAGE12_JOGS } from '../data/stage12Walls.js'
-import { walkSpeedForLevel } from '../data/progression.js'
+import { WALK_SPEED_BASE } from '../data/progression.js'
 import { groundPhase } from './groundPhase.js'
 import { rampTopAt } from './rampCollision.js'
 import { treadmillTopAt, resolveTreadmills } from './treadmillCollision.js'
+import { skateRackTopAt, resolveSkateRack } from './skateRackCollision.js'
 
 // Kinematic capsule, stepped once per frame: apply input -> gravity ->
 // integrate -> clamp to the island floor (or a GroundBlocks box footprint),
@@ -215,6 +217,8 @@ function resolveGroundBlocks(p, prevY) {
 // hugging Ground.059. All concatenated once at module scope rather than
 // per-frame to avoid an allocation inside this per-frame loop.
 const SIDE_WALL_COLLIDERS = [
+  ...HUB_WALLS,
+  HUB_DOOR_FILL,
   ...SIDE_WALLS,
   ...SIDE_WALL_END_CAPS,
   ...SIDE_WALL_BULGES,
@@ -290,11 +294,11 @@ export function step(dt) {
   const wishX = fwdX * mv.z + rightX * mv.x
   const wishZ = fwdZ * mv.z + rightZ * mv.x
 
-  // Ground speed scales with the store's Speed stat (data/progression.js's
-  // walkSpeedForLevel) — the more Speed the player has walked their way to,
-  // the faster they actually move. Written onto the player singleton so
+  // Fixed ground speed plus whichever skate is equipped (store's
+  // moveSpeedBonus, set by equipHexPad) — independent of the Speed
+  // stat/level shown in the UI. Written onto the player singleton so
   // PlayerAvatar.jsx's gait normalization reads the same live value.
-  const moveSpeed = walkSpeedForLevel(useGameStore.getState().level)
+  const moveSpeed = WALK_SPEED_BASE + useGameStore.getState().moveSpeedBonus
   player.moveSpeed = moveSpeed
 
   approach(player.velocity, 'x', wishX * moveSpeed, ACCEL * dt)
@@ -317,17 +321,21 @@ export function step(dt) {
 
   resolveSideWalls(p)
   resolveGroundBlocks(p, prevY)
-  // The treadmill sits on the main island, where blockTop/rampTop below are
-  // skipped entirely (that check exists for the off-island stage corridor,
-  // not the flat hub) — so this runs unconditionally, on-island or not.
+  // The treadmill and SkateRack both sit on the main island, where
+  // blockTop/rampTop below are skipped entirely (that check exists for the
+  // off-island stage corridor, not the flat hub) — so these run
+  // unconditionally, on-island or not.
   resolveTreadmills(p, prevY)
+  resolveSkateRack(p, prevY)
 
   const onIsland = Math.abs(p.x - ISLAND_X) <= ISLAND_WIDTH / 2 && Math.abs(p.z - ISLAND_Z) <= ISLAND_DEPTH / 2
   const blockTop = onIsland ? null : groundBlockTopAt(p.x, p.z, prevY)
   const rampTop = onIsland ? null : rampTopAt(p.x, p.z)
   const treadmillTop = treadmillTopAt(p.x, p.z, prevY)
+  const skateRackTop = skateRackTopAt(p.x, p.z, prevY)
   let floorTop = blockTop !== null && rampTop !== null ? Math.max(blockTop, rampTop) : (blockTop ?? rampTop)
   if (treadmillTop !== null) floorTop = floorTop !== null ? Math.max(floorTop, treadmillTop) : treadmillTop
+  if (skateRackTop !== null) floorTop = floorTop !== null ? Math.max(floorTop, skateRackTop) : skateRackTop
 
   if (onIsland) {
     const surface = floorTop !== null ? Math.max(GROUND_Y, floorTop) : GROUND_Y

@@ -767,9 +767,9 @@ export default function Hud() {
       }
       const { ownedHexPads, equippedHexPad } = useGameStore.getState()
       if (ownedHexPads.has(index)) {
-        prompt.setText(equippedHexPad === index ? null : 'Press E to Equip Pad')
+        prompt.setText(equippedHexPad === index ? null : 'Press E to Equip Skate')
       } else {
-        prompt.setText('Press E to Buy Pad')
+        prompt.setText('Press E to Buy Skate')
       }
       prompt.setHoldProgress(interactHoldState.progress)
     }, 100)

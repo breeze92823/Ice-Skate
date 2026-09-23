@@ -6,6 +6,7 @@ import Water from './components/Water.jsx'
 import Ground from './components/Ground.jsx'
 import GroundBlocks from './components/GroundBlocks.jsx'
 import SlopeBlock from './components/SlopeBlock.jsx'
+import HubWalls from './components/HubWalls.jsx'
 import SideWalls from './components/SideWalls.jsx'
 import Stage2Walls from './components/Stage2Walls.jsx'
 import Stage3Walls from './components/Stage3Walls.jsx'
@@ -23,9 +24,11 @@ import Hammer from './components/Hammer.jsx'
 import CrusherWalls from './components/CrusherWalls.jsx'
 import RampBlock from './components/RampBlock.jsx'
 import Road from './components/Road.jsx'
-import DisplayPodium from './components/DisplayPodium.jsx'
 import Player from './components/Player.jsx'
 import Treadmills from './components/Treadmills.jsx'
+import LeaderboardSigns from './components/LeaderboardSigns.jsx'
+import SkateRack from './components/SkateRack.jsx'
+import IceSkateShoes from './components/IceSkateShoes.jsx'
 import TeleportGate from './components/TeleportGate.jsx'
 import GiantBall from './components/GiantBall.jsx'
 import Sahur from './components/Sahur.jsx'
@@ -76,11 +79,14 @@ export default function App() {
           <RampBlock />
         </Suspense>
         <Road />
-        <DisplayPodium />
         <Player />
         <Treadmills />
+        <SkateRack />
+        <IceSkateShoes />
+        <LeaderboardSigns />
         <TeleportGate />
         <GiantBall />
+        <HubWalls />
         <SideWalls />
         <Stage2Walls />
         <Stage3Walls />

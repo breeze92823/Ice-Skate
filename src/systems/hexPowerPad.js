@@ -1,8 +1,6 @@
-// Hex speed pad buy/equip proximity. This project has no in-world pads
-// (data/hexPowerPad.js's HEX_SPEED_PAD_POSITIONS is empty), so
-// findNearestPadInRange() always returns null and the buy/equip prompt
-// never shows. Kept wired so systems/interact.js and the store's
-// ownedHexPads/equippedHexPad need no changes the day pads are placed.
+// Hex speed pad buy/equip proximity — backs the SkateRack's pickups
+// (data/hexPowerPad.js's HEX_SPEED_PAD_POSITIONS/_TIERS are derived from
+// data/skateRack.js's SKATE_RACK_TIERS, one pad per skate on the bench).
 import { player } from './playerState.js'
 import { useGameStore } from '../store/useGameStore.js'
 import { playSpeedGainPop } from './sfx.js'
@@ -47,7 +45,7 @@ export function interactWithNearestPad() {
     if (state.equippedHexPad !== index) {
       state.equipHexPad(index)
       playSpeedGainPop()
-      showActionResult('Pad Equipped', true)
+      showActionResult('Skate Equipped', true)
     }
   } else {
     const tier = HEX_SPEED_PAD_TIERS[index]
@@ -55,7 +53,7 @@ export function interactWithNearestPad() {
     if (state.wins >= tier.winsRequired) {
       state.buyHexPad(index)
       playSpeedGainPop()
-      showActionResult(`Pad Purchased! +${formatShort(tier.speedPerGain)} Speed`, true)
+      showActionResult(`Skate Purchased! +${formatShort(tier.speedPerGain)} Speed`, true)
     } else {
       showActionResult(`Need ${formatShort(tier.winsRequired)} Wins to Buy`, false)
     }
