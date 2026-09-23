@@ -10,6 +10,7 @@ import {
   LEADERBOARD_ENTRIES,
   rankColorFor,
   LEADERBOARD_SELF_NAME_COLOR,
+  LEADERBOARD_SELF_ROW_COLOR,
 } from '../data/leaderboard.js'
 
 // "SPEED — Global Leaderboard" standee near the treadmill row — a scoreboard
@@ -19,12 +20,16 @@ import {
 // leaderboard.js's LEADERBOARD_INSTANCES over position/rotationY/scale/
 // title/color/stat, same split as TreadmillProp.jsx/Treadmills.jsx.
 //
-// `stat` (e.g. 'speed'/'wins', a store/useGameStore.js field) makes this
-// board LIVE: rows come from systems/net.js's getLeaderboard(stat, limit) —
-// our own row straight off the live store, every other row from whichever
-// players are currently online/saved — same source the HUD's own net status
-// reads. `stat === null` (the Most Time board, which has no such field) falls
-// back to data/leaderboard.js's fixed LEADERBOARD_ENTRIES roster instead.
+// `stat` (e.g. 'speed'/'wins'/'timePlayed') makes this board LIVE: rows come
+// from systems/net.js's getLeaderboard(stat, limit) — our own row straight
+// off the live store, every other row from whichever players are currently
+// online/saved — same source the HUD's own net status reads. All three
+// boards pass a `stat` today (data/leaderboard.js's METRICS); `stat === null`
+// is kept as a fallback to the fixed LEADERBOARD_ENTRIES roster in case a
+// future board tracks something with no live field. Our own row (`isSelf`)
+// gets both a tinted name (LEADERBOARD_SELF_NAME_COLOR) and a full-row
+// highlight stripe (LEADERBOARD_SELF_ROW_COLOR) so "that's you" reads at a
+// glance on every board, not just the name color.
 function useNetRoster(active) {
   const [, bump] = useReducer((n) => n + 1, 0)
   useEffect(() => {
@@ -65,6 +70,13 @@ const NAME_X = -0.76
 const VALUE_X = 1.35
 const AVATAR_SIZE = 0.2
 
+// Self row's highlight stripe — wide/tall enough to sit behind the rank,
+// name and value text of that one row (RANK_X..VALUE_X's own span), not the
+// full board width.
+const ROW_HILITE_WIDTH = 2.86
+const ROW_HILITE_X = 0.08
+const ROW_HILITE_HEIGHT = ROW_STEP_Y * 0.86
+
 const FACE_Z = BOARD_T / 2 + 0.005
 const TEXT_Z = BOARD_T / 2 + 0.03
 const TAB_Z = BOARD_T / 2 + 0.02
@@ -102,6 +114,7 @@ export default function LeaderboardSign({ position, rotationY, scale, title, col
         nameColor: row.isSelf ? LEADERBOARD_SELF_NAME_COLOR : '#e9edf1',
         valueText: formatValue(row.value),
         avatarColor: null,
+        isSelf: row.isSelf,
       }))
     : LEADERBOARD_ENTRIES.map((entry) => ({
         key: entry.name,
@@ -111,6 +124,7 @@ export default function LeaderboardSign({ position, rotationY, scale, title, col
         nameColor: '#e9edf1',
         valueText: formatShort(entry.speed),
         avatarColor: entry.avatarColor,
+        isSelf: false,
       }))
 
   return (
@@ -235,6 +249,12 @@ export default function LeaderboardSign({ position, rotationY, scale, title, col
           const nameX = row.avatarColor ? NAME_X : AVATAR_X
           return (
             <group key={row.key} position={[0, y, 0]}>
+              {row.isSelf && (
+                <mesh position={[ROW_HILITE_X, 0, FACE_Z + 0.005]} castShadow={false}>
+                  <planeGeometry args={[ROW_HILITE_WIDTH, ROW_HILITE_HEIGHT]} />
+                  <meshBasicMaterial color={LEADERBOARD_SELF_ROW_COLOR} transparent opacity={0.28} toneMapped={false} />
+                </mesh>
+              )}
               <Text
                 position={[RANK_X, 0, TEXT_Z]}
                 fontSize={0.18}

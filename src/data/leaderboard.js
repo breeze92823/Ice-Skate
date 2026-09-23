@@ -92,6 +92,13 @@ export function rankColorFor(rank) {
 // Laser-Escape's leaderboardBoard.js selfNameColor.
 export const LEADERBOARD_SELF_NAME_COLOR = '#8dffb0'
 
+// The self row's full-width background stripe (unlit glow strip behind the
+// rank/name/value text, components/LeaderboardSign.jsx) — a stronger,
+// glance-visible highlight than the name-color tint alone, same idea as
+// Laser-Escape's leaderboardBoard.js panelStripeSelf, just an unlit glow
+// plane here rather than a lit panel material.
+export const LEADERBOARD_SELF_ROW_COLOR = '#39ff88'
+
 // Fictional roster — not the real handles from the reference screenshot,
 // just styled the same way (rank, @handle, avatarColor swatch, speed value).
 // Only the Most Time board (no live `stat`, see METRICS above) still renders
