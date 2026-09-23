@@ -47,6 +47,14 @@ export const WINS_INITIAL = envInt('VITE_WINS_INITIAL', 0)
 export const WINS_MIN = 0
 export const WINS_MAX = 1_000_000_000_000
 
+// Total wall-clock seconds this account has spent in the game (store's
+// timePlayed) — shown on LeaderboardSign3 (data/leaderboard.js's "Most Time"
+// board). MAX is a generous ~100 years, just a guard against corrupt/forged
+// saved data the same way SPEED_MAX/WINS_MAX guard their own fields.
+export const TIME_PLAYED_INITIAL = 0
+export const TIME_PLAYED_MIN = 0
+export const TIME_PLAYED_MAX = 100 * 365 * 24 * 60 * 60
+
 export const SPEED_PER_GAIN_INITIAL = 1
 export const SPEED_PER_GAIN_MIN = 1
 export const SPEED_PER_GAIN_MAX = 3500

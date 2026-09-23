@@ -101,7 +101,7 @@ let sdkReconnecting = false // mirrors room.reconnection.isReconnecting
 // (fresh connect, offline/solo play, or no server) — getLeaderboard() below
 // degrades to a self-only row in that case, same "never blocks gameplay"
 // stance as the rest of this file.
-let globalLeaderboard = { speed: [], rebirth: [], wins: [] }
+let globalLeaderboard = { speed: [], rebirth: [], wins: [], timePlayed: [] }
 
 async function loadSdk() {
   if (!sdkModule) sdkModule = await import('@colyseus/sdk')
@@ -201,7 +201,7 @@ function scheduleAvatarResend() {
 // this file); only a React component would call it as a hook.
 function statsPayload() {
   const s = useGameStore.getState()
-  return { speed: s.speed, rebirth: s.rebirth, wins: s.wins }
+  return { speed: s.speed, rebirth: s.rebirth, wins: s.wins, timePlayed: s.timePlayed }
 }
 
 let statsResendTimer = 0
@@ -232,15 +232,16 @@ function scheduleStatsResend() {
 // fires on ANY store change (no subscribeWithSelector middleware), so this
 // filters out the unrelated ones (buying a hex pad, ...) rather than
 // scheduling a pointless resend for every one of them.
-let lastScheduledStats = { speed: undefined, rebirth: undefined, wins: undefined }
+let lastScheduledStats = { speed: undefined, rebirth: undefined, wins: undefined, timePlayed: undefined }
 
 function onLocalStoreChange(state) {
   if (
     state.speed !== lastScheduledStats.speed ||
     state.rebirth !== lastScheduledStats.rebirth ||
-    state.wins !== lastScheduledStats.wins
+    state.wins !== lastScheduledStats.wins ||
+    state.timePlayed !== lastScheduledStats.timePlayed
   ) {
-    lastScheduledStats = { speed: state.speed, rebirth: state.rebirth, wins: state.wins }
+    lastScheduledStats = { speed: state.speed, rebirth: state.rebirth, wins: state.wins, timePlayed: state.timePlayed }
     scheduleStatsResend()
   }
 }
@@ -259,6 +260,7 @@ function progressPayload() {
     speed: s.speed,
     rebirth: s.rebirth,
     wins: s.wins,
+    timePlayed: s.timePlayed,
     ownedHexPads: Array.from(s.ownedHexPads),
     equippedHexPad: s.equippedHexPad,
     ownedAuras: Array.from(s.ownedAuras),
@@ -310,6 +312,7 @@ function onLocalStoreChangeProgress(state) {
     state.speed,
     state.rebirth,
     state.wins,
+    state.timePlayed,
     state.equippedHexPad,
     state.equippedAura,
     state.moveSpeed,
@@ -487,7 +490,7 @@ function attachRoom(joined) {
   // refreshLeaderboard(), broadcast every 15s). Re-render on every update via
   // emit() — not per frame, same convention as every other emit() site here.
   room.onMessage('leaderboard', (msg) => {
-    globalLeaderboard = msg || { speed: [], rebirth: [], wins: [] }
+    globalLeaderboard = msg || { speed: [], rebirth: [], wins: [], timePlayed: [] }
     emit()
   })
 
@@ -517,7 +520,7 @@ function handleLeave() {
   netState.playerCount = 0
   // Stale rows from the last session shouldn't linger on the boards while
   // we're disconnected/retrying; the next attach's first broadcast refills this.
-  globalLeaderboard = { speed: [], rebirth: [], wins: [] }
+  globalLeaderboard = { speed: [], rebirth: [], wins: [], timePlayed: [] }
   // Fade every remote out; step() culls them as alpha hits 0.
   for (const e of remotePlayers.values()) e.present = false
 
@@ -614,7 +617,7 @@ export function teardown() {
   room = null
   connecting = false
   remotePlayers.clear()
-  globalLeaderboard = { speed: [], rebirth: [], wins: [] }
+  globalLeaderboard = { speed: [], rebirth: [], wins: [], timePlayed: [] }
   netState.playerCount = 0
   setStatus('idle')
 }
@@ -705,7 +708,7 @@ function ingestRemote(id, s, now) {
       avatarRev: 0,
       // 0 until their first `stats` packet — getLeaderboard() below just
       // reads whatever's here, no special-casing.
-      speed: s.speed || 0, rebirth: s.rebirth || 0, wins: s.wins || 0,
+      speed: s.speed || 0, rebirth: s.rebirth || 0, wins: s.wins || 0, timePlayed: s.timePlayed || 0,
       alpha: 0, present: true, lastAt: now,
     }
     remotePlayers.set(id, e)
@@ -719,10 +722,12 @@ function ingestRemote(id, s, now) {
   const speed = s.speed || 0
   const rebirth = s.rebirth || 0
   const wins = s.wins || 0
-  if (speed !== e.speed || rebirth !== e.rebirth || wins !== e.wins) {
+  const timePlayed = s.timePlayed || 0
+  if (speed !== e.speed || rebirth !== e.rebirth || wins !== e.wins || timePlayed !== e.timePlayed) {
     e.speed = speed
     e.rebirth = rebirth
     e.wins = wins
+    e.timePlayed = timePlayed
     emit() // a tracked stat changed — a leaderboard's rank may need updating
   }
   if (s.username && s.username !== e.username) {

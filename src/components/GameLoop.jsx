@@ -13,6 +13,7 @@ import { step as stepHexPowerPad } from '../systems/hexPowerPad.js'
 import { step as stepGlowFloorPanel } from '../systems/glowFloorPanel.js'
 import { step as stepTreadmillAnim } from '../systems/treadmillAnim.js'
 import { step as stepSpeedGain } from '../systems/speedGain.js'
+import { step as stepPlayTime } from '../systems/playTime.js'
 import { step as stepHammer } from '../systems/hammerAnim.js'
 import { step as stepHammerCrush } from '../systems/hammerCrush.js'
 import { step as stepCrusherAnim } from '../systems/crusherAnim.js'
@@ -52,6 +53,7 @@ export default function GameLoop() {
     // Walking-based Speed gain — every WALK_GAIN_INTERVAL seconds of
     // unbroken movement input, or of standing on an occupied treadmill.
     stepSpeedGain(dt)
+    stepPlayTime(dt)
     stepAfk()
     stepHexPowerPad()
     stepGlowFloorPanel()

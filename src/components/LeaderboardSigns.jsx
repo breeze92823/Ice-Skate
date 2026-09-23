@@ -17,6 +17,7 @@ export default function LeaderboardSigns() {
           scale={instance.scale}
           title={instance.title}
           color={instance.color}
+          stat={instance.stat}
         />
       ))}
     </>

@@ -1,7 +1,11 @@
 // "SPEED — Global Leaderboard" standee, styled after the reference mock (a
 // dark scoreboard with a red crown/frame trim, an orange "SPEED" title, tab
-// filters and a ranked list of players). Purely decorative set dressing,
-// same as SkateRackSign.jsx/SkateRack.js — no live data, just a fixed list.
+// filters and a ranked list of players). Same board shape as
+// SkateRackSign.jsx/SkateRack.js — all three boards are live now:
+// components/LeaderboardSign.jsx reads real ranked rows off systems/net.js's
+// getLeaderboard(stat, limit) for any instance whose METRICS entry below has
+// a `stat`. `stat === null` (kept as a fallback, not reachable today) still
+// renders the fixed ENTRIES roster further down.
 import { TREADMILL_POSITION, TREADMILL_ROTATION_Y } from './hub.js'
 
 // Board + stand shape, same "bezel box + inset face plane" split as
@@ -42,17 +46,23 @@ const ROW_STEP = BOARD_SPAN + ROW_GAP
 // Each board tracks a different stat, its title/trim colored to match —
 // red/yellow/green reused from colors already established elsewhere in the
 // project (MEDAL_COLORS' gold and the "Equipped"/SkateRackLabel green) so
-// the palette stays consistent rather than inventing new hexes.
+// the palette stays consistent rather than inventing new hexes. `stat` is
+// the store/useGameStore.js field (also what systems/net.js's getLeaderboard
+// ranks by) each board reads live; `null` means no such field exists and the
+// board keeps rendering the fixed ENTRIES roster below instead. `timePlayed`
+// (systems/playTime.js) is in seconds — components/LeaderboardSign.jsx
+// formats it with data/format.js's formatDuration instead of formatShort.
 const METRICS = [
-  { title: 'Speed', color: '#e8484f' },
-  { title: 'Wins', color: '#ffd21e' },
-  { title: 'Most Time', color: '#5fe37a' },
+  { title: 'Speed', color: '#e8484f', stat: 'speed' },
+  { title: 'Wins', color: '#ffd21e', stat: 'wins' },
+  { title: 'Most Time', color: '#5fe37a', stat: 'timePlayed' },
 ]
 
 export const LEADERBOARD_INSTANCES = METRICS.map((metric, i) => ({
   name: `LeaderboardSign${i + 1}`,
   title: metric.title,
   color: metric.color,
+  stat: metric.stat,
   position: [BASE_POSITION[0], BASE_POSITION[1], BASE_POSITION[2] + i * ROW_STEP],
   rotationY: BASE_ROTATION_Y,
   scale: BASE_SCALE,
@@ -69,14 +79,26 @@ export const LEADERBOARD_TABS = [
 
 // Rank medal colors for the top 3 rows; everything past that reads in plain
 // white, same "gold/silver/bronze then white" convention as most in-game
-// leaderboards.
+// leaderboards. Exported as rankColorFor() so components/LeaderboardSign.jsx
+// can apply the same scheme to LIVE rows (rank computed at render time from
+// systems/net.js's getLeaderboard() ordering), not just this fixed roster.
 const MEDAL_COLORS = ['#ffd21e', '#c9d3dc', '#d98a4b']
+export function rankColorFor(rank) {
+  return MEDAL_COLORS[rank - 1] ?? '#e9edf1'
+}
+
+// A live board's own row (systems/net.js getLeaderboard()'s `isSelf` flag)
+// tints its name this color — a small "that's you" cue, same idea as
+// Laser-Escape's leaderboardBoard.js selfNameColor.
+export const LEADERBOARD_SELF_NAME_COLOR = '#8dffb0'
 
 // Fictional roster — not the real handles from the reference screenshot,
 // just styled the same way (rank, @handle, avatarColor swatch, speed value).
-// `speed` is a plain number, run through data/format.js's formatShort at
-// render time (project convention, see SkateRackLabel.jsx) rather than the
-// source image's own "Qi" suffix.
+// Only the Most Time board (no live `stat`, see METRICS above) still renders
+// this; Speed/Wins pull real ranked rows from systems/net.js's
+// getLeaderboard() instead. `speed` is a plain number, run through
+// data/format.js's formatShort at render time (project convention, see
+// SkateRackLabel.jsx) rather than the source image's own "Qi" suffix.
 const ENTRIES = [
   { name: '@frostbyte_rk', speed: 482_000_000, avatarColor: '#ff7a3d' },
   { name: '@glaciergrind', speed: 417_000_000, avatarColor: '#4fce6e' },
@@ -90,5 +112,5 @@ const ENTRIES = [
 export const LEADERBOARD_ENTRIES = ENTRIES.map((entry, i) => ({
   ...entry,
   rank: i + 1,
-  rankColor: MEDAL_COLORS[i] ?? '#e9edf1',
+  rankColor: rankColorFor(i + 1),
 }))

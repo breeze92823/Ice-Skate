@@ -1,5 +1,5 @@
-// Big-number presentation. Pure functions of primitives only, no React, no
-// store import, so any HUD readout can depend on it freely.
+// Big-number and duration presentation. Pure functions of primitives only,
+// no React, no store import, so any HUD readout can depend on them freely.
 const SUFFIXES = ['', 'K', 'M', 'B', 'T']
 
 function packSuffix(over) {
@@ -32,4 +32,18 @@ export function formatShort(n) {
   if (mantissa.includes('.')) mantissa = mantissa.replace(/\.?0+$/, '')
 
   return `${neg ? '-' : ''}${mantissa}${suffix}`
+}
+
+// store/useGameStore.js's timePlayed (seconds) -> the two largest units:
+// 45 -> "45s", 125 -> "2m 5s", 7384 -> "2h 3m", 93784 -> "1d 2h".
+export function formatDuration(totalSeconds) {
+  const s = Math.max(0, Math.floor(Number(totalSeconds) || 0))
+  const days = Math.floor(s / 86400)
+  const hours = Math.floor((s % 86400) / 3600)
+  const minutes = Math.floor((s % 3600) / 60)
+  const seconds = s % 60
+  if (days > 0) return `${days}d ${hours}h`
+  if (hours > 0) return `${hours}h ${minutes}m`
+  if (minutes > 0) return `${minutes}m ${seconds}s`
+  return `${seconds}s`
 }

@@ -1,16 +1,37 @@
+import { useEffect, useReducer } from 'react'
 import { Text } from '@react-three/drei'
 import { MATERIAL_PBR } from '../data/materials.js'
-import { formatShort } from '../data/format.js'
-import { LEADERBOARD_SHAPE, LEADERBOARD_TABS, LEADERBOARD_ENTRIES } from '../data/leaderboard.js'
+import { formatShort, formatDuration } from '../data/format.js'
+import { useGameStore } from '../store/useGameStore.js'
+import { getLeaderboard, subscribe as subscribeNet } from '../systems/net.js'
+import {
+  LEADERBOARD_SHAPE,
+  LEADERBOARD_TABS,
+  LEADERBOARD_ENTRIES,
+  rankColorFor,
+  LEADERBOARD_SELF_NAME_COLOR,
+} from '../data/leaderboard.js'
 
 // "SPEED — Global Leaderboard" standee near the treadmill row — a scoreboard
 // on a monitor-style stand, same "bezel box + inset face plane + drei Text"
 // construction as SkateRackSign.jsx, just larger and holding a tab row plus
-// a ranked list instead of one title line. Decorative only, no live data —
-// LEADERBOARD_ENTRIES in data/leaderboard.js is a fixed fictional roster,
-// shared by every instance (LeaderboardSigns.jsx maps data/leaderboard.js's
-// LEADERBOARD_INSTANCES over position/rotationY/scale, same split as
-// TreadmillProp.jsx/Treadmills.jsx).
+// a ranked list instead of one title line. LeaderboardSigns.jsx maps data/
+// leaderboard.js's LEADERBOARD_INSTANCES over position/rotationY/scale/
+// title/color/stat, same split as TreadmillProp.jsx/Treadmills.jsx.
+//
+// `stat` (e.g. 'speed'/'wins', a store/useGameStore.js field) makes this
+// board LIVE: rows come from systems/net.js's getLeaderboard(stat, limit) —
+// our own row straight off the live store, every other row from whichever
+// players are currently online/saved — same source the HUD's own net status
+// reads. `stat === null` (the Most Time board, which has no such field) falls
+// back to data/leaderboard.js's fixed LEADERBOARD_ENTRIES roster instead.
+function useNetRoster(active) {
+  const [, bump] = useReducer((n) => n + 1, 0)
+  useEffect(() => {
+    if (!active) return undefined
+    return subscribeNet(() => bump())
+  }, [active])
+}
 const {
   boardWidth: BOARD_W,
   boardHeight: BOARD_H,
@@ -48,8 +69,49 @@ const FACE_Z = BOARD_T / 2 + 0.005
 const TEXT_Z = BOARD_T / 2 + 0.03
 const TAB_Z = BOARD_T / 2 + 0.02
 
-export default function LeaderboardSign({ position, rotationY, scale, title, color }) {
+// How many ranked rows this board draws at once — matches the fixed
+// ENTRIES roster's own length, which is what ROW_START_Y/ROW_STEP_Y above
+// were sized for. A live board (stat != null) fetches at most this many rows
+// from systems/net.js's getLeaderboard(); fewer players online just leaves
+// the remaining slots undrawn rather than resizing the board.
+const VISIBLE_ROWS = LEADERBOARD_ENTRIES.length
+
+export default function LeaderboardSign({ position, rotationY, scale, title, color, stat }) {
   const boardCenterY = FOOT_H + POST_H + BOARD_H / 2
+
+  // Hook order must stay identical across renders (stat is a fixed prop per
+  // instance, never toggles), so both are called unconditionally; each
+  // no-ops internally when this board has no live stat.
+  useNetRoster(!!stat)
+  useGameStore((s) => (stat ? s[stat] : 0))
+
+  // Normalize both sources (live net rows vs. the fixed dummy roster) into
+  // one row shape so the JSX below renders either without branching per
+  // field. `avatarColor` stays null for live rows — no such data exists on
+  // systems/net.js's getLeaderboard() rows — so the avatar swatch mesh below
+  // just doesn't draw for those, same as Laser-Escape's live LeaderboardBoard.
+  // `timePlayed` (systems/playTime.js) is seconds, not a plain magnitude —
+  // formatDuration reads "2h 15m" instead of formatShort's "2.15K".
+  const formatValue = stat === 'timePlayed' ? formatDuration : formatShort
+  const rows = stat
+    ? getLeaderboard(stat, VISIBLE_ROWS).map((row, i) => ({
+        key: row.id,
+        rank: i + 1,
+        rankColor: rankColorFor(i + 1),
+        name: row.name,
+        nameColor: row.isSelf ? LEADERBOARD_SELF_NAME_COLOR : '#e9edf1',
+        valueText: formatValue(row.value),
+        avatarColor: null,
+      }))
+    : LEADERBOARD_ENTRIES.map((entry) => ({
+        key: entry.name,
+        rank: entry.rank,
+        rankColor: entry.rankColor,
+        name: entry.name,
+        nameColor: '#e9edf1',
+        valueText: formatShort(entry.speed),
+        avatarColor: entry.avatarColor,
+      }))
 
   return (
     <group position={position} rotation-y={rotationY} scale={scale}>
@@ -165,39 +227,43 @@ export default function LeaderboardSign({ position, rotationY, scale, title, col
           )
         })}
 
-        {/* Ranked rows, mapped from data/leaderboard.js's LEADERBOARD_ENTRIES
-            so extending the roster needs no changes here. */}
-        {LEADERBOARD_ENTRIES.map((entry, i) => {
+        {/* Ranked rows — `rows` above already normalized live (stat != null)
+            vs. dummy (data/leaderboard.js's LEADERBOARD_ENTRIES) into one
+            shape, so this map never branches on which source it came from. */}
+        {rows.map((row, i) => {
           const y = ROW_START_Y - i * ROW_STEP_Y
+          const nameX = row.avatarColor ? NAME_X : AVATAR_X
           return (
-            <group key={entry.name} position={[0, y, 0]}>
+            <group key={row.key} position={[0, y, 0]}>
               <Text
                 position={[RANK_X, 0, TEXT_Z]}
                 fontSize={0.18}
                 fontWeight="bold"
-                color={entry.rankColor}
+                color={row.rankColor}
                 outlineWidth={0.015}
                 outlineColor="#000000"
                 anchorX="center"
                 anchorY="middle"
               >
-                {`#${entry.rank}`}
+                {`#${row.rank}`}
               </Text>
-              <mesh position={[AVATAR_X, 0, TEXT_Z]} castShadow={false}>
-                <boxGeometry args={[AVATAR_SIZE, AVATAR_SIZE, 0.03]} />
-                <meshStandardMaterial color={entry.avatarColor} {...MATERIAL_PBR.LEADERBOARD_FACE} />
-              </mesh>
+              {row.avatarColor && (
+                <mesh position={[AVATAR_X, 0, TEXT_Z]} castShadow={false}>
+                  <boxGeometry args={[AVATAR_SIZE, AVATAR_SIZE, 0.03]} />
+                  <meshStandardMaterial color={row.avatarColor} {...MATERIAL_PBR.LEADERBOARD_FACE} />
+                </mesh>
+              )}
               <Text
-                position={[NAME_X, 0, TEXT_Z]}
+                position={[nameX, 0, TEXT_Z]}
                 fontSize={0.16}
                 fontWeight="bold"
-                color="#e9edf1"
+                color={row.nameColor}
                 outlineWidth={0.015}
                 outlineColor="#000000"
                 anchorX="left"
                 anchorY="middle"
               >
-                {entry.name}
+                {row.name}
               </Text>
               <Text
                 position={[VALUE_X, 0, TEXT_Z]}
@@ -209,7 +275,7 @@ export default function LeaderboardSign({ position, rotationY, scale, title, col
                 anchorX="right"
                 anchorY="middle"
               >
-                {formatShort(entry.speed)}
+                {row.valueText}
               </Text>
             </group>
           )

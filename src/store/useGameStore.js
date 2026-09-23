@@ -10,6 +10,9 @@ import {
   WINS_INITIAL,
   WINS_MIN,
   WINS_MAX,
+  TIME_PLAYED_INITIAL,
+  TIME_PLAYED_MIN,
+  TIME_PLAYED_MAX,
   SPEED_PER_GAIN_INITIAL,
   WALK_SPEED_BASE,
   MOVE_SPEED_MIN,
@@ -39,6 +42,12 @@ export const useGameStore = create((set, get) => ({
   level: LEVEL_INITIAL,
   rebirth: REBIRTH_INITIAL,
   wins: WINS_INITIAL,
+  // Total wall-clock seconds this account has spent in the game
+  // (systems/playTime.js, stepped once per frame from GameLoop) — shown on
+  // LeaderboardSign3 (data/leaderboard.js's "Most Time" board). Persisted
+  // for a signed-in player like every other account-scoped field below;
+  // tracked locally for a guest too but never saved anywhere durable.
+  timePlayed: TIME_PLAYED_INITIAL,
   speedPerGain: SPEED_PER_GAIN_INITIAL,
   // Tier 0 has winsRequired: 0 and speedPerGain 1 — the free starter tier,
   // owned and equipped from the start.
@@ -83,6 +92,16 @@ export const useGameStore = create((set, get) => ({
       }
     })
     return applied
+  },
+
+  // Called every frame from systems/playTime.js with the frame's dt. Not
+  // gated on movement/activity like gainSpeed — any unpaused frame counts,
+  // matching what a player would actually call "time played" (systems/
+  // timeScale.js's tick() already returns 0 while paused/backgrounded, so
+  // this never over-counts).
+  addPlayTime(dt) {
+    if (!(dt > 0)) return
+    set((s) => ({ timePlayed: clamp(s.timePlayed + dt, TIME_PLAYED_MIN, TIME_PLAYED_MAX) }))
   },
 
   // Manual, gated by canAcceptRebirth. Re-checks eligibility itself so a
@@ -191,6 +210,7 @@ export const useGameStore = create((set, get) => ({
         speed: SPEED_INITIAL,
         rebirth: REBIRTH_INITIAL,
         wins: WINS_INITIAL,
+        timePlayed: TIME_PLAYED_INITIAL,
         speedPerGain: SPEED_PER_GAIN_INITIAL,
         ownedHexPads: new Set([0]),
         equippedHexPad: 0,
@@ -212,6 +232,7 @@ export const useGameStore = create((set, get) => ({
       const speed = clamp(Number(saved.speed) || 0, SPEED_MIN, SPEED_MAX)
       const rebirth = clamp(Number(saved.rebirth) || 0, REBIRTH_MIN, REBIRTH_MAX)
       const wins = clamp(Number(saved.wins) || 0, WINS_MIN, WINS_MAX)
+      const timePlayed = clamp(Number(saved.timePlayed) || 0, TIME_PLAYED_MIN, TIME_PLAYED_MAX)
       const ownedHexPads = new Set(
         Array.isArray(saved.ownedHexPads) && saved.ownedHexPads.length ? saved.ownedHexPads : [0],
       )
@@ -228,6 +249,7 @@ export const useGameStore = create((set, get) => ({
         speed,
         rebirth,
         wins,
+        timePlayed,
         ownedHexPads,
         equippedHexPad,
         speedPerGain: tier ? tier.speedPerGain : s.speedPerGain,
