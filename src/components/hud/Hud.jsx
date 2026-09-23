@@ -23,6 +23,7 @@ import AuthPanel from './AuthPanel.jsx'
 import IdentityChip from './IdentityChip.jsx'
 import ActionResult from './ActionResult.jsx'
 import TeleportPanel from './TeleportPanel.jsx'
+import MoveSpeedBadge from './MoveSpeedBadge.jsx'
 import { actionResultState, showActionResult } from '../../systems/actionResult.js'
 import { useSettings, useTouchMode } from './hooks.js'
 
@@ -812,6 +813,10 @@ export default function Hud() {
       />
 
       <LeftCenterControls />
+
+      {/* Right-edge, vertically centred readout of the player's current
+         physical walk speed (store's moveSpeed). */}
+      <MoveSpeedBadge />
 
       {/* Stage picker — appears while near TeleportGate.jsx's portal. */}
       <TeleportPanel />

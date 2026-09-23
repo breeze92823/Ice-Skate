@@ -11,6 +11,7 @@ import {
   WINS_MIN,
   WINS_MAX,
   SPEED_PER_GAIN_INITIAL,
+  WALK_SPEED_BASE,
   levelForSpeed,
   canAcceptRebirth,
   clamp,
@@ -40,10 +41,11 @@ export const useGameStore = create((set, get) => ({
   // owned and equipped from the start.
   ownedHexPads: new Set([0]),
   equippedHexPad: 0,
-  // Physical walk-speed bonus (m/s) from the currently equipped skate —
-  // added to WALK_SPEED_BASE in systems/playerMovement.js. Seeded from tier
-  // 0 to match equippedHexPad's own default.
-  moveSpeedBonus: HEX_SPEED_PAD_TIERS[0].moveSpeedBonus,
+  // Physical walk speed (m/s) — WALK_SPEED_BASE (VITE_WALK_SPEED_BASE) plus
+  // the currently equipped skate's own moveSpeed, read as-is by
+  // systems/playerMovement.js. Seeded from tier 0 to match equippedHexPad's
+  // own default.
+  moveSpeed: WALK_SPEED_BASE + HEX_SPEED_PAD_TIERS[0].moveSpeed,
   ownedAuras: new Set(),
   equippedAura: null,
   ownedTargets: new Set(),
@@ -103,7 +105,7 @@ export const useGameStore = create((set, get) => ({
     if (!state.ownedHexPads.has(index)) return
     const tier = HEX_SPEED_PAD_TIERS[index]
     if (!tier) return
-    set({ equippedHexPad: index, speedPerGain: tier.speedPerGain, moveSpeedBonus: tier.moveSpeedBonus })
+    set({ equippedHexPad: index, speedPerGain: tier.speedPerGain, moveSpeed: WALK_SPEED_BASE + tier.moveSpeed })
   },
 
   // Called from components/hud/Hud.jsx's AuraEntry wins button. Buying
@@ -167,7 +169,7 @@ export const useGameStore = create((set, get) => ({
         speedPerGain: SPEED_PER_GAIN_INITIAL,
         ownedHexPads: new Set([0]),
         equippedHexPad: 0,
-        moveSpeedBonus: HEX_SPEED_PAD_TIERS[0].moveSpeedBonus,
+        moveSpeed: WALK_SPEED_BASE + HEX_SPEED_PAD_TIERS[0].moveSpeed,
         ownedAuras: new Set(),
         equippedAura: null,
         ownedTargets: new Set(),
@@ -200,7 +202,7 @@ export const useGameStore = create((set, get) => ({
         ownedHexPads,
         equippedHexPad,
         speedPerGain: tier ? tier.speedPerGain : s.speedPerGain,
-        moveSpeedBonus: tier ? tier.moveSpeedBonus : s.moveSpeedBonus,
+        moveSpeed: tier ? WALK_SPEED_BASE + tier.moveSpeed : s.moveSpeed,
         ownedAuras,
         equippedAura,
         ownedTargets,

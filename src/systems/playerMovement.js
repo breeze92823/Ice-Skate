@@ -18,7 +18,6 @@ import { STAGE9_SEGMENTS, STAGE9_JOGS } from '../data/stage9Walls.js'
 import { STAGE10_SEGMENTS, STAGE10_DOOR_FILLS } from '../data/stage10Walls.js'
 import { STAGE11_SEGMENTS, STAGE11_JOGS, STAGE11_DOOR_FILLS } from '../data/stage11Walls.js'
 import { STAGE12_SEGMENTS, STAGE12_JOGS } from '../data/stage12Walls.js'
-import { WALK_SPEED_BASE } from '../data/progression.js'
 import { groundPhase } from './groundPhase.js'
 import { rampTopAt } from './rampCollision.js'
 import { treadmillTopAt, resolveTreadmills } from './treadmillCollision.js'
@@ -45,7 +44,7 @@ function bandedBlockTopAt(block, x, z) {
   const ly = (topLocalZ * sin - (z - bz)) / cos
   for (const { y, halfWidth } of block.bands) {
     if (ly >= y[0] && ly <= y[1]) {
-      if (Math.abs(x - bx) > halfWidth) return null
+      if (Math.abs(x - bx) > halfWidth + player.dims.radius) return null
       return by + ly * sin + topLocalZ * cos
     }
   }
@@ -74,7 +73,7 @@ function bandedBlockTopAt(block, x, z) {
 // footprint also covers this (x, z), e.g. two blocks stacked at different
 // heights) and left for resolveGroundBlocks to treat as solid on its other
 // faces instead.
-function groundBlockTopAt(x, z, prevY) {
+function groundBlockTopAt(x, z, prevY, travelPad = 0) {
   for (const block of GROUND_BLOCKS) {
     if (block.phasing && !groundPhase.collidable) continue
     if (block.bands) {
@@ -86,9 +85,24 @@ function groundBlockTopAt(x, z, prevY) {
     const [width, thickness, depth] = block.size
     const rotationX = block.rotationX ?? 0
     const rotationY = block.rotationY ?? 0
-    const halfW = width / 2
+    // Padded by the player's own radius (same Minkowski sum resolveGroundBlocks
+    // uses for its side push below) so a capsule centered in a seam narrower
+    // than one radius from either neighbor's edge still reads that neighbor's
+    // top as solid ground, instead of finding a gap under its exact center
+    // point and dropping through — most likely to bite at high speed, where a
+    // frame's movement can land the sample point deep in a seam that would
+    // otherwise only ever graze one frame at a time. `travelPad` (this frame's
+    // own horizontal travel distance, moveSpeed*dt — see step()'s call below)
+    // extends that same padding by however far the player actually slid this
+    // frame: a hairline seam between two abutting blocks (Ground.001-.009's
+    // Blender-placed slabs are never perfectly edge-to-edge) is then bridged
+    // once ground speed is high enough to cross it within a single frame,
+    // same as a real skater's momentum carrying them over a crack too narrow
+    // to catch a foot in — while a slow walk, or a seam wide enough that even
+    // this frame's travel doesn't span it, still finds the true gap and falls.
+    const halfW = width / 2 + player.dims.radius + travelPad
     const halfH = thickness / 2
-    const halfD = depth / 2
+    const halfD = depth / 2 + player.dims.radius + travelPad
     const dx = x - bx
     const dz = z - bz
     const cosY = Math.cos(rotationY)
@@ -271,11 +285,38 @@ const ACCEL = 45 // m/s^2 approach toward target velocity
 const GRAVITY = -22 // m/s^2
 const JUMP_SPEED = 7.5 // m/s
 
-function approach(v, key, target, maxDelta) {
-  const d = target - v[key]
-  if (d > maxDelta) v[key] += maxDelta
-  else if (d < -maxDelta) v[key] -= maxDelta
-  else v[key] = target
+// Max horizontal distance covered per collision substep (see the loop in
+// step() below). resolveSideWalls/resolveGroundBlocks only catch a wall by
+// testing the player's position AFTER each move — at high moveSpeed, a
+// single full-frame move can land past a thin panel's far face without ever
+// sampling a point inside it, tunneling straight through (this bit at
+// moveSpeed ~50+, where one frame's move approaches the thinnest door-fill/
+// jog panels' own depth, e.g. stage3Walls.js's DOOR_FILL_DEPTH ~0.83). Kept
+// well under that thinnest panel depth (with margin, since the player's own
+// radius padding in those resolvers isn't guaranteed the same on every
+// collider) so no substep's move can skip cleanly over one regardless of
+// moveSpeed.
+const MAX_HORIZONTAL_STEP = 0.3
+
+// Clamps the (dx, dz) delta as one 2D vector rather than clamping each axis
+// independently — an axis-by-axis clamp (each capped at maxDelta) doesn't
+// produce a delta that points at the target when the two axes need very
+// different-sized corrections (e.g. right after a turn), so the velocity
+// visibly curves toward the target instead of accelerating straight at it.
+// That mismatch grows with target speed, hence only showing up at high
+// moveSpeed.
+function approach2D(v, targetX, targetZ, maxDelta) {
+  const dx = targetX - v.x
+  const dz = targetZ - v.z
+  const dist = Math.hypot(dx, dz)
+  if (dist <= maxDelta || dist === 0) {
+    v.x = targetX
+    v.z = targetZ
+  } else {
+    const scale = maxDelta / dist
+    v.x += dx * scale
+    v.z += dz * scale
+  }
 }
 
 export function step(dt) {
@@ -294,15 +335,14 @@ export function step(dt) {
   const wishX = fwdX * mv.z + rightX * mv.x
   const wishZ = fwdZ * mv.z + rightZ * mv.x
 
-  // Fixed ground speed plus whichever skate is equipped (store's
-  // moveSpeedBonus, set by equipHexPad) — independent of the Speed
-  // stat/level shown in the UI. Written onto the player singleton so
-  // PlayerAvatar.jsx's gait normalization reads the same live value.
-  const moveSpeed = WALK_SPEED_BASE + useGameStore.getState().moveSpeedBonus
+  // Ground speed set directly by whichever skate is equipped (store's
+  // moveSpeed, set by equipHexPad) — independent of the Speed stat/level
+  // shown in the UI. Written onto the player singleton so PlayerAvatar.jsx's
+  // gait normalization reads the same live value.
+  const moveSpeed = useGameStore.getState().moveSpeed
   player.moveSpeed = moveSpeed
 
-  approach(player.velocity, 'x', wishX * moveSpeed, ACCEL * dt)
-  approach(player.velocity, 'z', wishZ * moveSpeed, ACCEL * dt)
+  approach2D(player.velocity, wishX * moveSpeed, wishZ * moveSpeed, ACCEL * dt)
 
   // Jump reads last frame's grounded flag, then we clear it for this frame.
   if (inputState.jump) {
@@ -315,12 +355,26 @@ export function step(dt) {
 
   const p = player.position
   const prevY = p.y // before this frame's own integration — see groundBlockTopAt's landing test
-  p.x += player.velocity.x * dt
-  p.z += player.velocity.z * dt
   p.y += player.velocity.y * dt
 
-  resolveSideWalls(p)
-  resolveGroundBlocks(p, prevY)
+  // Horizontal move + wall resolution is substepped rather than applied as
+  // one big jump — see MAX_HORIZONTAL_STEP above for why a single full-frame
+  // move can tunnel through a thin panel at high moveSpeed. Each substep
+  // moves the player a bounded distance and immediately re-resolves walls/
+  // ground-block sides before the next substep, so no substep's move can
+  // clear a thin collider without a sample landing inside it first.
+  const dxTotal = player.velocity.x * dt
+  const dzTotal = player.velocity.z * dt
+  const horizDist = Math.hypot(dxTotal, dzTotal)
+  const steps = horizDist > MAX_HORIZONTAL_STEP ? Math.ceil(horizDist / MAX_HORIZONTAL_STEP) : 1
+  const stepX = dxTotal / steps
+  const stepZ = dzTotal / steps
+  for (let i = 0; i < steps; i++) {
+    p.x += stepX
+    p.z += stepZ
+    resolveSideWalls(p)
+    resolveGroundBlocks(p, prevY)
+  }
   // The treadmill and SkateRack both sit on the main island, where
   // blockTop/rampTop below are skipped entirely (that check exists for the
   // off-island stage corridor, not the flat hub) — so these run
@@ -329,7 +383,7 @@ export function step(dt) {
   resolveSkateRack(p, prevY)
 
   const onIsland = Math.abs(p.x - ISLAND_X) <= ISLAND_WIDTH / 2 && Math.abs(p.z - ISLAND_Z) <= ISLAND_DEPTH / 2
-  const blockTop = onIsland ? null : groundBlockTopAt(p.x, p.z, prevY)
+  const blockTop = onIsland ? null : groundBlockTopAt(p.x, p.z, prevY, horizDist)
   const rampTop = onIsland ? null : rampTopAt(p.x, p.z)
   const treadmillTop = treadmillTopAt(p.x, p.z, prevY)
   const skateRackTop = skateRackTopAt(p.x, p.z, prevY)

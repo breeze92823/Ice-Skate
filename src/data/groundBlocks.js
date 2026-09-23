@@ -83,61 +83,61 @@ const SLOPE_BLOCK_ROTATION_X = -0.1745329201221466
 export const GROUND_BLOCKS = [
   {
     name: 'Ground.001',
-    position: [0, 2.990000009536743, 31.020584106445312],
+    position: [0, 3, 31.020584106445312],
     size: [33.651187896728516, 6, 21.64034080505371], // width, thickness (height), depth
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.002',
-    position: [0, 2.990000009536743, 47.146671295166016],
+    position: [0, 3, 47.146671295166016],
     size: [33.651187896728516, 6, 8.800000190734863],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.003',
-    position: [0, 2.990000009536743, 57.83223342895508],
+    position: [0, 3, 57.83223342895508],
     size: [33.651187896728516, 6, 10],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.004',
-    position: [0, 2.990000009536743, 69.50313568115234],
+    position: [0, 3, 69.50313568115234],
     size: [33.651187896728516, 6, 9],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.005',
-    position: [0, 2.990000009536743, 79.20074462890625],
+    position: [0, 3, 79.20074462890625],
     size: [33.651187896728516, 6, 9],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.006',
-    position: [0, 2.990000009536743, 90.82257080078125],
+    position: [0, 3, 90.82257080078125],
     size: [33.651187896728516, 6, 12.363219261169434],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.007',
-    position: [0, 2.990000009536743, 105.62158966064453],
+    position: [0, 3, 105.62158966064453],
     size: [33.651187896728516, 6, 9],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.008',
-    position: [0, 2.990000009536743, 116.97642517089844],
+    position: [0, 3, 116.97642517089844],
     size: [33.651187896728516, 6, 12.363219261169434],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.009',
-    position: [0, 2.990000009536743, 140.448486328125],
+    position: [0, 3, 140.448486328125],
     size: [33.651187896728516, 6, 31.338233947753906],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.010',
-    position: [0, 2.990000009536743, 198.6915283203125],
+    position: [0, 3, 198.6915283203125],
     size: [33.651187896728516, 6, 65.76907348632812],
     ...GROUND_BLOCK_COLOR,
   },
@@ -155,7 +155,7 @@ export const GROUND_BLOCKS = [
   },
   {
     name: 'Ground.013',
-    position: [0, 2.990000009536743, 257.0271301269531],
+    position: [0, 3, 257.0271301269531],
     size: [33.651187896728516, 6, 31.338233947753906],
     ...GROUND_BLOCK_COLOR,
   },
@@ -181,7 +181,7 @@ export const GROUND_BLOCKS = [
   },
   {
     name: 'Ground.015',
-    position: [0, 16.895078659057617, 386.8052978515625],
+    position: [0, 16.957406997680664, 386.8052978515625],
     size: [33.651187896728516, 6, 31.338233947753906],
     ...GROUND_BLOCK_COLOR,
   },
@@ -241,13 +241,13 @@ export const GROUND_BLOCKS = [
   },
   {
     name: 'Ground.025',
-    position: [0, 15.110108375549316, 592.5717163085938],
+    position: [0, 15.110108375549320, 592.5717163085938],
     size: [13.800000190734863, 6, 10],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.026',
-    position: [0, 15.10010814666748, 557.5137329101562],
+    position: [0, 15.110108375549320, 557.5137329101562],
     size: [13.5, 6, 60.146907806396484],
     // Loops through solid -> fade-out -> fully hidden -> fade-in -> solid on
     // a shared timer (systems/groundPhase.js) — GroundBlocks.jsx animates
@@ -258,13 +258,13 @@ export const GROUND_BLOCKS = [
   },
   {
     name: 'Ground.027',
-    position: [0, 15.110108375549316, 517.062255859375],
+    position: [0, 15.10010814666748, 517.062255859375],
     size: [13.800000190734863, 6, 10],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.028',
-    position: [0, 8.726423263549805, 612.6755981445312],
+    position: [0, 8.676575660705570, 612.6755981445312],
     size: [33.651187896728516, 18.8670654296875, 31.338232040405273],
     ...GROUND_BLOCK_COLOR,
   },
@@ -282,7 +282,7 @@ export const GROUND_BLOCKS = [
   },
   {
     name: 'Ground.031',
-    position: [0, 8.757868766784668, 641.974365234375],
+    position: [0, 8.676575660705570, 641.974365234375],
     size: [13.800000190734863, 18.8670654296875, 27.650508880615234],
     ...GROUND_BLOCK_COLOR,
   },

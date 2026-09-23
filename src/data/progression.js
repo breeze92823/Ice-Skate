@@ -15,6 +15,11 @@ export const SPEED_INITIAL = envInt('VITE_SPEED_INITIAL', 1)
 export const SPEED_MIN = 1
 export const SPEED_MAX = 1_000_000_000_000
 
+// Overrides the free starter skate's (tier 0) physical walk speed — see
+// data/hexPowerPad.js's HEX_SPEED_PAD_TIERS. Unrelated to the Speed
+// stat/level above.
+export const WALK_SPEED_BASE = envInt('VITE_WALK_SPEED_BASE', 1)
+
 export const LEVEL_INITIAL = 1
 export const LEVEL_MIN = 1
 export const LEVEL_MAX = 50_000
@@ -80,6 +85,3 @@ export function canAcceptRebirth(level, rebirth) {
   return rebirth < REBIRTH_MAX && level >= rebirthRequirement(rebirth)
 }
 
-// Player ground speed (systems/playerMovement.js's move target, m/s) — fixed,
-// not tied to the Speed stat/level shown in the UI.
-export const WALK_SPEED_BASE = envInt('VITE_WALK_SPEED_BASE', 6) // m/s

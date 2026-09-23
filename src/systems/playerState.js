@@ -1,3 +1,6 @@
+import { WALK_SPEED_BASE } from '../data/progression.js'
+import { HEX_SPEED_PAD_TIERS } from '../data/hexPowerPad.js'
+
 // The player singleton. Mutated in place, never reallocated, so the frame
 // loop can read it without a React subscription.
 export const player = {
@@ -6,10 +9,12 @@ export const player = {
   velocity: { x: 0, y: 0, z: 0 },
   grounded: true,
   facing: Math.PI, // yaw the character model faces, radians
-  // Current target ground speed (m/s) — fixed (data/progression.js's
-  // WALK_SPEED_BASE), not tied to the store's Speed stat. Read by
-  // PlayerAvatar.jsx to normalize the run-cycle rate.
-  moveSpeed: 6,
+  // Current target ground speed (m/s) — set directly by the equipped skate
+  // (store's moveSpeed field), not tied to the Speed stat/level. Read by
+  // PlayerAvatar.jsx to normalize the run-cycle rate. Overwritten every
+  // frame by systems/playerMovement.js's step(); this is just the pre-first-
+  // frame default, matching the store's own tier-0 + WALK_SPEED_BASE default.
+  moveSpeed: WALK_SPEED_BASE + HEX_SPEED_PAD_TIERS[0].moveSpeed,
   // Live collider dimensions. Seeded from the defaults below, but the
   // avatar's height/shoulderWidth proportions rescale them.
   dims: { radius: 0.4, height: 1.8 },
