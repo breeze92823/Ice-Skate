@@ -104,12 +104,16 @@ export const PROGRESS_RESEND_DEBOUNCE_MS = 3_000
 // than the "Player" fallback. Not waited on reconnects.
 export const USERNAME_WAIT_MS = 2_500
 
-// --- Remote body look (if RemotePlayers.jsx ever ships) --------------------
+// --- Remote body look (components/RemotePlayers.jsx) ------------------------
+// Capsule dims are fixed (unlike the local player's, which scale with
+// proportions via systems/avatarModel.js's applyProportions) — only the real
+// Bloxity rig, once loaded, reflects a remote's actual proportions.
 export const REMOTE_BODY = {
   RADIUS: 0.4,
   HEIGHT: 1.8,
-  COLOR: '#4aa3ff',
-  NAME_HEIGHT: 2.35,
+  COLOR: '#4aa3ff', // cool blue — distinct from Player.jsx's capsule fallback red
+  NUB_COLOR: '#ffd36b', // matches Player.jsx's own facing-direction nub
+  NAME_HEIGHT: 2.35, // metres above the feet for the floating name tag
   NAME_COLOR: '#ffffff',
   NAME_OUTLINE: '#000000',
   NAME_SIZE: 0.32,

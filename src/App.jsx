@@ -25,6 +25,7 @@ import CrusherWalls from './components/CrusherWalls.jsx'
 import RampBlock from './components/RampBlock.jsx'
 import Road from './components/Road.jsx'
 import Player from './components/Player.jsx'
+import RemotePlayers from './components/RemotePlayers.jsx'
 import Treadmills from './components/Treadmills.jsx'
 import LeaderboardSigns from './components/LeaderboardSigns.jsx'
 import SkateRack from './components/SkateRack.jsx'
@@ -80,6 +81,7 @@ export default function App() {
         </Suspense>
         <Road />
         <Player />
+        <RemotePlayers />
         <Treadmills />
         <SkateRack />
         <IceSkateShoes />
