@@ -44,6 +44,9 @@ export const LEVEL_BAR_FILL_GRADIENT =
 export const LEVEL_BAR_CAPTION_BAND =
   'linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0) 100%)'
 
+// Text color for the "Rebirth (Xn)" readout above the bar.
+export const LEVEL_BAR_REBIRTH_TEXT_COLOR = '#ff5fc4'
+
 export const LEVEL_BAR_CAPTION_BAND_PAD_X = 52
 export const LEVEL_BAR_CAPTION_BAND_PAD_Y = 4
 

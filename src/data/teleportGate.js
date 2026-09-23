@@ -10,7 +10,9 @@
 // verified against Treadmill's TREADMILL_ROTATION_Y in hub.js (using
 // Treadmill's local +Z axis) — see project-blender-previz-rig memory.
 // `size` is the plane's world-space edge length (Blender `dimensions`, both
-// axes equal here since it's an unrotated-in-its-own-plane square).
+// axes equal here since it's an unrotated-in-its-own-plane square) — doubled
+// from the raw Blender value (5.949975490570068) to make the portal read
+// more prominently in-game; not a Blender re-export, just a manual x2 here.
 //
 // Geometry/transform only — material is owned by the game (TeleportGate.jsx),
 // see feedback-blender-material-ownership memory. Re-run this conversion by
@@ -21,7 +23,7 @@ export const TELEPORT_GATES = [
     name: 'Teleport_Gate',
     position: [-9.00705623626709, 10.662978172302246, 30.266468048095703],
     rotationY: Math.PI / 2,
-    size: 5.949975490570068,
+    size: 5.949975490570068 * 2,
   },
 ]
 

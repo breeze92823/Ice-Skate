@@ -200,6 +200,19 @@ export const useGameStore = create((set, get) => ({
     set((s) => ({ wins: s.wins - item.winsRequired }))
   },
 
+  // Called from components/hud/TeleportPanel.jsx's "Pay with Wins" button.
+  // Unlike buyAuraTier/buyHexPad/buyTarget, a stage teleport has no
+  // owned-set — every teleport is paid for again (data/stages.js's
+  // winsCost) — so this is just a generic affordability-gated deduction.
+  // Returns whether the charge went through, since the caller (teleport)
+  // must not fire on a rejected payment.
+  spendWins(amount) {
+    const state = get()
+    if (!(amount > 0) || state.wins < amount) return false
+    set((s) => ({ wins: s.wins - amount }))
+    return true
+  },
+
   // Puts every account-scoped field back to the exact defaults a brand-new
   // guest starts with. Called when a signed-in player logs back out to a
   // guest session, once real save/load lands.

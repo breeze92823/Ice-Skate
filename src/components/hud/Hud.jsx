@@ -274,6 +274,10 @@ function BuxIcon({ className }) {
 // entirely for now on top of that.
 const BUX_BUY_ENABLED = false
 
+// Temporary kill switch for the Shop button in LeftCenterControls below.
+// ShopWindow/shopWindow stay wired — flip back to true to bring it back.
+const SHOP_BUTTON_ENABLED = false
+
 // One SKU in the Shop popup's card row.
 function ShopItemCard({ item, isTouch }) {
   const wins = useGameStore((s) => s.wins)
@@ -357,8 +361,8 @@ function ShopWindow({ onClose, isTouch }) {
   )
 }
 
-// Popup for the HUD's Aura button. Body is AURA_TIERS' entries in a
-// fixed-height list so it's always mouse-wheel scrollable regardless of
+// Popup opened by pressing E at the merchant. Body is AURA_TIERS' entries in
+// a fixed-height list so it's always mouse-wheel scrollable regardless of
 // viewport height.
 function AuraWindow({ onClose, isTouch }) {
   return (
@@ -501,30 +505,20 @@ function LeftCenterControls() {
             {formatCompact(wins)}
           </span>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            playButtonClick()
-            setShowAuraWindow(true)
-          }}
-          title="Open Aura"
-          className="pointer-events-auto flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded-lg border border-amber-400/40 bg-amber-600/80 text-slate-100 shadow-lg transition hover:bg-amber-500"
-        >
-          <img src="/ui/aura.png" alt="" className="h-5 w-5" draggable={false} />
-          <span className="text-[7px] font-semibold leading-none tracking-wide">Aura</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            playButtonClick()
-            setShowShopWindow(true)
-          }}
-          title="Open Shop"
-          className="pointer-events-auto flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded-lg border border-amber-400/40 bg-amber-600/80 text-slate-100 shadow-lg transition hover:bg-amber-500"
-        >
-          <img src="/ui/shop.png" alt="" className="h-5 w-5" draggable={false} />
-          <span className="text-[7px] font-semibold leading-none tracking-wide">Shop</span>
-        </button>
+        {SHOP_BUTTON_ENABLED && (
+          <button
+            type="button"
+            onClick={() => {
+              playButtonClick()
+              setShowShopWindow(true)
+            }}
+            title="Open Shop"
+            className="pointer-events-auto flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded-lg border border-amber-400/40 bg-amber-600/80 text-slate-100 shadow-lg transition hover:bg-amber-500"
+          >
+            <img src="/ui/shop.png" alt="" className="h-5 w-5" draggable={false} />
+            <span className="text-[7px] font-semibold leading-none tracking-wide">Shop</span>
+          </button>
+        )}
         <button
           type="button"
           onClick={() => {
@@ -566,32 +560,20 @@ function LeftCenterControls() {
       </div>
       <div className="flex flex-col items-center gap-2">
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              playButtonClick()
-              setShowAuraWindow(true)
-            }}
-            title="Open Aura"
-            className="pointer-events-auto flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-lg border border-amber-400/40 bg-amber-600/80 px-3 py-2 text-slate-100 shadow-lg transition hover:bg-amber-500"
-          >
-            <img src="/ui/aura.png" alt="" className="h-10 w-10" draggable={false} />
-            <span className="text-xs font-semibold tracking-wide">Aura</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              playButtonClick()
-              setShowShopWindow(true)
-            }}
-            title="Open Shop"
-            className="pointer-events-auto flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-lg border border-amber-400/40 bg-amber-600/80 px-3 py-2 text-slate-100 shadow-lg transition hover:bg-amber-500"
-          >
-            <img src="/ui/shop.png" alt="" className="h-10 w-10" draggable={false} />
-            <span className="text-xs font-semibold tracking-wide">Shop</span>
-          </button>
-        </div>
-        <div className="flex items-center gap-2">
+          {SHOP_BUTTON_ENABLED && (
+            <button
+              type="button"
+              onClick={() => {
+                playButtonClick()
+                setShowShopWindow(true)
+              }}
+              title="Open Shop"
+              className="pointer-events-auto flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-lg border border-amber-400/40 bg-amber-600/80 px-3 py-2 text-slate-100 shadow-lg transition hover:bg-amber-500"
+            >
+              <img src="/ui/shop.png" alt="" className="h-10 w-10" draggable={false} />
+              <span className="text-xs font-semibold tracking-wide">Shop</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {

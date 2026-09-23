@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { ACESFilmicToneMapping, PCFSoftShadowMap, SRGBColorSpace } from 'three'
 import GameLoop from './components/GameLoop.jsx'
+import ShadowSun from './components/ShadowSun.jsx'
 import Water from './components/Water.jsx'
 import Ground from './components/Ground.jsx'
 import GroundBlocks from './components/GroundBlocks.jsx'
@@ -51,21 +52,13 @@ export default function App() {
         camera={{ fov: 55, near: 0.1, far: 200, position: [0, 6, 12] }}
       >
         <color attach="background" args={['#bcdcff']} />
+        {/* Fades geometry into the sky colour starting a bit before
+            ShadowSun's ±100 frustum edge, so anything near that edge (or
+            just popping into view down a long corridor) blends into the
+            horizon instead of appearing as a hard line. */}
+        <fog attach="fog" args={['#bcdcff', 90, 190]} />
         <hemisphereLight args={['#eaf3ff', '#b7a98f', 1.1]} />
-        <directionalLight
-          position={[30, 45, 20]}
-          intensity={2.3}
-          castShadow
-          shadow-mapSize={[2048, 2048]}
-          shadow-camera-left={-45}
-          shadow-camera-right={45}
-          shadow-camera-top={45}
-          shadow-camera-bottom={-45}
-          shadow-camera-near={1}
-          shadow-camera-far={160}
-          shadow-bias={-0.0004}
-          shadow-normalBias={0.04}
-        />
+        <ShadowSun />
 
         <GameLoop />
         <Water />

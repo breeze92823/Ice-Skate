@@ -1,6 +1,7 @@
 import { useThree, useFrame } from '@react-three/fiber'
 import { tick } from '../systems/timeScale.js'
 import { step } from '../systems/playerMovement.js'
+import { step as stepShadowSun } from '../systems/shadowSun.js'
 import { step as stepGroundPhase } from '../systems/groundPhase.js'
 import { step as stepGiantBall } from '../systems/giantBallPhysics.js'
 import { step as stepGiantBallCrush } from '../systems/giantBallCrush.js'
@@ -39,6 +40,7 @@ export default function GameLoop() {
     // collision this tick matches whatever state was just set.
     stepGroundPhase(dt)
     step(dt)
+    stepShadowSun()
     stepGiantBall(dt)
     stepGiantBallCrush()
     stepSahurFollow(dt)
