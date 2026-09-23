@@ -1,5 +1,6 @@
 import { inputState } from './input.js'
 import { player } from './playerState.js'
+import { clampCameraDistance } from './cameraCollision.js'
 
 // Third-person follow with right-drag orbit + wheel zoom, plus a keyboard
 // turn: A/D and the left/right arrows yaw the camera around the player at a
@@ -80,9 +81,19 @@ export function update(camera, dt) {
   }
 
   const cp = Math.cos(state.pitch)
-  const desiredX = target.x + Math.sin(state.yaw) * cp * state.distance
-  const desiredY = target.y + Math.sin(state.pitch) * state.distance
-  const desiredZ = target.z + Math.cos(state.yaw) * cp * state.distance
+  const dirX = Math.sin(state.yaw) * cp
+  const dirY = Math.sin(state.pitch)
+  const dirZ = Math.cos(state.yaw) * cp
+
+  // Recomputed fresh every frame from the raw, unclamped state.distance
+  // (never written back into it) — so the camera pulls in while a wall is
+  // between it and the player, then springs back out to the requested zoom
+  // the moment that wall is no longer in the way, instead of getting stuck
+  // at whatever distance the last collision left it at.
+  const allowedDistance = clampCameraDistance(target.x, target.y, target.z, dirX, dirY, dirZ, state.distance)
+  const desiredX = target.x + dirX * allowedDistance
+  const desiredY = target.y + dirY * allowedDistance
+  const desiredZ = target.z + dirZ * allowedDistance
 
   if (!initialised || teleported) {
     camera.position.set(desiredX, desiredY, desiredZ)

@@ -4,7 +4,7 @@
 // set dressing.
 import { GROUND_Y } from './hub.js'
 
-export const ICE_SKATE_POSITION = [4, GROUND_Y, 4]
+export const ICE_SKATE_POSITION = [4, GROUND_Y-5, 4]
 export const ICE_SKATE_ROTATION_Y = 0
 
 // Center-to-center gap between the two skates along local X.
