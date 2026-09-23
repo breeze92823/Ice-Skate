@@ -3,6 +3,15 @@ import { useFrame } from '@react-three/fiber'
 import { GroundBlock } from './Ground.jsx'
 import { GROUND_BLOCKS } from '../data/groundBlocks.js'
 import { groundPhase } from '../systems/groundPhase.js'
+import { MATERIAL_PBR } from '../data/materials.js'
+
+// Ground.055 (see its sideWallMaterial flag in data/groundBlocks.js) uses
+// the guard-wall Side_Wall material/color instead of the usual ground
+// checker, on request — same solid gray used by SideWalls.jsx through
+// Stage10Walls.jsx (light === dark, so the stud texture reads as a flat
+// color rather than a checker).
+const SIDE_WALL_LIGHT = '#9398a0'
+const SIDE_WALL_DARK = '#9398a0'
 
 // Solid ground-block props imported from Blender's "GroundBlock" collection
 // — each stands in for a duplicated Ground object, at its own imported
@@ -56,7 +65,10 @@ export default function GroundBlocks() {
   return (
     <>
       {GROUND_BLOCKS.filter((b) => !b.customMesh).map((block) => {
-        const { name, position, size, rotationX = 0, rotationY = 0, light, dark, phasing } = block
+        const { name, position, size, rotationX = 0, rotationY = 0, light, dark, phasing, sideWallMaterial } = block
+        const pbr = sideWallMaterial ? MATERIAL_PBR.SIDE_WALL : undefined
+        const resolvedLight = sideWallMaterial ? SIDE_WALL_LIGHT : light
+        const resolvedDark = sideWallMaterial ? SIDE_WALL_DARK : dark
         if (phasing) {
           return (
             <PhasingGroundBlock
@@ -65,8 +77,8 @@ export default function GroundBlocks() {
               size={size}
               rotationX={rotationX}
               rotationY={rotationY}
-              light={light}
-              dark={dark}
+              light={resolvedLight}
+              dark={resolvedDark}
             />
           )
         }
@@ -79,8 +91,9 @@ export default function GroundBlocks() {
             depth={depth}
             position={position}
             rotation={[rotationX, rotationY, 0]}
-            light={light}
-            dark={dark}
+            light={resolvedLight}
+            dark={resolvedDark}
+            pbr={pbr}
           />
         )
       })}

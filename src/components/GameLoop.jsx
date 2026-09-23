@@ -11,9 +11,12 @@ import { step as stepPlayerHealth } from '../systems/playerHealth.js'
 import { step as stepAfk } from '../systems/afk.js'
 import { step as stepHexPowerPad } from '../systems/hexPowerPad.js'
 import { step as stepGlowFloorPanel } from '../systems/glowFloorPanel.js'
+import { step as stepTreadmillAnim } from '../systems/treadmillAnim.js'
 import { step as stepSpeedGain } from '../systems/speedGain.js'
 import { step as stepHammer } from '../systems/hammerAnim.js'
 import { step as stepHammerCrush } from '../systems/hammerCrush.js'
+import { step as stepCrusherAnim } from '../systems/crusherAnim.js'
+import { step as stepCrusherCrush } from '../systems/crusherCrush.js'
 import { step as stepMerchant } from '../systems/merchant.js'
 import { step as stepTeleportGate } from '../systems/teleportGate.js'
 import { step as stepInteract } from '../systems/interact.js'
@@ -49,8 +52,11 @@ export default function GameLoop() {
     stepAfk()
     stepHexPowerPad()
     stepGlowFloorPanel()
+    stepTreadmillAnim(dt)
     stepHammer(dt)
     stepHammerCrush()
+    stepCrusherAnim(dt)
+    stepCrusherCrush()
     stepMerchant()
     // Stage-select HUD panel's own proximity flag — a plain click target,
     // not one of the hold-to-confirm zones stepInteract resolves below.

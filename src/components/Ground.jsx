@@ -39,6 +39,7 @@ export function GroundBlock({
   rotation = [0, 0, 0],
   light = LIGHT,
   dark = DARK,
+  pbr = MATERIAL_PBR.GROUND,
   transparent = false,
   objectRef,
   materialsRef,
@@ -69,12 +70,12 @@ export function GroundBlock({
   )
 
   const topMaterial = useMemo(
-    () => new MeshStandardMaterial({ map: topTexture, transparent, ...MATERIAL_PBR.GROUND }),
-    [topTexture, transparent]
+    () => new MeshStandardMaterial({ map: topTexture, transparent, ...pbr }),
+    [topTexture, transparent, pbr]
   )
   const sideMaterial = useMemo(
-    () => new MeshStandardMaterial({ map: sideTexture, transparent, ...MATERIAL_PBR.GROUND }),
-    [sideTexture, transparent]
+    () => new MeshStandardMaterial({ map: sideTexture, transparent, ...pbr }),
+    [sideTexture, transparent, pbr]
   )
 
   const block = useMemo(() => {

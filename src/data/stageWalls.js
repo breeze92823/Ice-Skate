@@ -1,6 +1,6 @@
 // Stage-transition boundary walls imported from Blender/world.blend's
-// "StageWall.001" through "StageWall.012" objects (top-level in Stage1
-// through Stage12 respectively, unparented, no modifiers/rig) — plain
+// "StageWall.001" through "StageWall.013" objects (top-level in Stage1
+// through Stage13 respectively, unparented, no modifiers/rig) — plain
 // duplicates of the same source cube, one per stage. Visual-only: unlike
 // SideWalls (data/sideWalls.js), these are NOT registered in
 // playerMovement.js's collision — the player must be able to skate straight
@@ -17,13 +17,13 @@
 // All 12 share one size — same source cube duplicated per stage, never
 // independently resized.
 //
-// `rotationY` (optional, three.js radians, default 0) — StageWall.009-012
-// (Stage9-Stage12) are yawed -90° about Blender's Z axis to close off the
+// `rotationY` (optional, three.js radians, default 0) — StageWall.009-013
+// (Stage9-Stage13) are yawed -90° about Blender's Z axis to close off the
 // corridor after it turns there; a Blender Z-axis rotation maps straight
 // through to a three.js Y-axis rotation of the same signed angle (same
 // convention as groundBlocks.js's Ground.049/052/056-059 turn pillars).
 //
-// Re-run this conversion by hand any time StageWall.001-012 is
+// Re-run this conversion by hand any time StageWall.001-013 is
 // added/moved/resized/rotated/renamed in Blender — this file is not
 // auto-synced (see project-stage-layout memory on Blender renumbering).
 //
@@ -127,5 +127,13 @@ export const STAGE_WALLS = [
     rotationY: -1.5707963705062866,
     stage: 12,
     recommendedLevel: 85, // placeholder
+  },
+  {
+    name: 'StageWall.013',
+    position: [-848.6567993164062, 116.84745025634766, 1003.2493286132812],
+    size: STAGE_WALL_SIZE,
+    rotationY: -1.5707963705062866,
+    stage: 13,
+    recommendedLevel: 93, // placeholder
   },
 ]

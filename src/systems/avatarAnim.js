@@ -12,7 +12,7 @@
 // leaves the avatar static, the same way a failed load leaves Player on the
 // capsule.
 import * as THREE from 'three'
-import { GAIT } from '../data/bloxity.js'
+import { GAIT, clamp } from '../data/bloxity.js'
 
 // phase offset per limb: legs are half a cycle apart (one pushes off while
 // the other glides); each arm is anti-phase to the leg on its own side
@@ -80,8 +80,9 @@ export function makeGait(built) {
 }
 
 // speed01: horizontal speed / target run speed, clamped to 0..1. grounded
-// gates the airborne pose below.
-export function updateGait(gait, dt, speed01, grounded = true) {
+// gates the airborne pose below. verticalVelocity (player.velocity.y, m/s,
+// +up) drives the airborne arm pose's rising/falling blend.
+export function updateGait(gait, dt, speed01, grounded = true, verticalVelocity = 0) {
   if (!gait || dt <= 0) return
 
   const target = speed01 < 0 ? 0 : speed01 > 1 ? 1 : speed01
@@ -100,11 +101,15 @@ export function updateGait(gait, dt, speed01, grounded = true) {
   }
 
   if (!grounded) {
+    // 0 at full-speed fall, 1 at full-speed rise, 0.5 at the apex (v==0) —
+    // continuous in verticalVelocity, so it crosses the apex with no snap.
+    const armBlend = clamp(verticalVelocity / GAIT.airborneArmVelRef, -1, 1) * 0.5 + 0.5
+    const armAngle = GAIT.airborneArmDown + (GAIT.airborneArmUp - GAIT.airborneArmDown) * armBlend
     for (const limb of gait.limbs) {
       let angle = 0
       if (limb.name === 'LegL1') angle = GAIT.airborneLegL
       else if (limb.name === 'LegR1') angle = GAIT.airborneLegR
-      else if (limb.kind === 'arm') angle = GAIT.airborneArm
+      else if (limb.kind === 'arm') angle = armAngle
       gait.q.setFromAxisAngle(gait.axis, angle)
       limb.bone.quaternion.copy(limb.bind).premultiply(gait.q)
     }

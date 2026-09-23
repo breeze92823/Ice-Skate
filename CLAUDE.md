@@ -14,6 +14,11 @@ for it by default; the two-light setup below is still the baseline for every
 new prop/scene. Still skip Laser-Escape features this project hasn't opted
 into otherwise (quality tiers, DRACO/KTX2 loaders) unless asked.
 
+Extending the guard-wall/roof corridor between two `StageWall.NNN` panels
+(e.g. "do the same from StageWall.005 to StageWall.006")? Follow
+[GuardWallContainers.md](GuardWallContainers.md) — it's the playbook for
+that pattern, including the mistakes already made and fixed once.
+
 ## Lighting
 
 Exactly two lights, always:

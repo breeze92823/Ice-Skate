@@ -21,9 +21,12 @@ export const ISLAND_Z = -27.228
 
 export const SPAWN = { x: 0, y: GROUND_Y, z: 0 }
 
-// The treadmill prop's placement — synced from Blender/world.blend's
-// "Treadmill" object (see project-blender-previz-rig memory for the
-// rig-rotation conversion this position/yaw was derived through).
+// Placement of the first treadmill in the row (data/treadmill.js's
+// TREADMILLS lays out two more beside it, to the right) — reuses the
+// original step+pillar+overhead-screen gym unit's own spot: synced from
+// Blender/world.blend's "Treadmill" object (see project-blender-previz-rig
+// memory for the rig-rotation conversion this position/yaw was derived
+// through).
 export const TREADMILL_POSITION = [16.213, GROUND_Y, -63.659]
-export const TREADMILL_ROTATION_Y = Math.PI
+export const TREADMILL_ROTATION_Y = 0
 

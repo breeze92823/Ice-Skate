@@ -434,23 +434,30 @@ export const GROUND_BLOCKS = [
   },
   {
     name: 'Ground.053',
-    position: [-316.2373962402344, -2.4787490367889404, 1003.05908203125],
-    size: [25.307403564453125, 40.98118591308594, 2.5],
+    position: [-314.2426452636719, -2.4787490367889404, 1003.05908203125],
+    size: [21.41473388671875, 40.98118591308594, 2.5],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.054',
-    position: [-331.993896484375, 63.45986557006836, 1003.05908203125],
-    size: [6.397993087768555, 96.1390609741211, 2.5],
+    position: [-325.5093688964844, 63.45986557006836, 1003.05908203125],
+    size: [1.1285537481307983, 96.1390609741211, 2.5],
     ...GROUND_BLOCK_COLOR,
   },
-  // GroundBlock.010 (Stage11) — synced 2026-09-23.
+  // GroundBlock.010 (Stage11) — re-synced 2026-09-23 (Blender edited
+  // Ground.053-055 again after the same-day sync above: .053/.054 moved in
+  // x and .053/.054 narrowed, .055 also moved in x and grew in local depth
+  // (raw z-dimension 31.34 -> 40.45)). Re-synced again same day: .055 grew
+  // much taller (thickness 40.98 -> 163.34) and dropped in y (90.87 ->
+  // 29.57) — Stage11's spawn (blockSpawn('Ground.055')) moves with it.
   {
     name: 'Ground.055',
-    position: [-350.81915283203125, 90.87358093261719, 1003.1856689453125],
-    size: [33.651187896728516, 40.98118591308594, 31.338232040405273],
+    position: [-346.31671142578125, 29.574045181274414, 1003.1856689453125],
+    size: [33.651187896728516, 163.34149169921875, 40.45344924926758],
     rotationY: -1.5707963705062866,
-    ...GROUND_BLOCK_COLOR,
+    // Uses the guard-wall Side_Wall material/color instead of the usual
+    // ground checker, on request — GroundBlocks.jsx reads this flag.
+    sideWallMaterial: true,
   },
   // GroundBlock.011 (Stage12) — synced 2026-09-23.
   {

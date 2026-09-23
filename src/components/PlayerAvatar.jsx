@@ -4,6 +4,8 @@ import { subscribe } from '../systems/avatarState.js'
 import { applyProportions, buildAvatar, disposeAvatar } from '../systems/avatarModel.js'
 import { makeGait, updateGait, disposeGait } from '../systems/avatarAnim.js'
 import { player, setDims, resetDims } from '../systems/playerState.js'
+import { anyTreadmillOccupied } from '../systems/treadmillAnim.js'
+import { TREADMILL_WALK_ANIM_SPEED } from '../data/treadmill.js'
 
 // Mounts the Bloxity avatar under Player's transform group. Presentation
 // only: all loading, rig maths and the run cycle live in
@@ -79,8 +81,12 @@ export default function PlayerAvatar({ onReady }) {
   useFrame((_, delta) => {
     const gait = gaitRef.current
     if (!gait) return
-    const speed = Math.hypot(player.velocity.x, player.velocity.z) / player.moveSpeed
-    updateGait(gait, Math.min(delta, 0.1), speed, player.grounded)
+    const moveSpeed = Math.hypot(player.velocity.x, player.velocity.z) / player.moveSpeed
+    // Standing still on a running treadmill belt (systems/treadmillAnim.js)
+    // still reads as walking, like stepping onto a real one, instead of the
+    // avatar idling in place while the belt scrolls under it.
+    const speed = anyTreadmillOccupied.value ? Math.max(moveSpeed, TREADMILL_WALK_ANIM_SPEED) : moveSpeed
+    updateGait(gait, Math.min(delta, 0.1), speed, player.grounded, player.velocity.y)
   })
 
   return <group ref={groupRef} />

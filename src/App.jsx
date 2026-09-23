@@ -7,12 +7,25 @@ import Ground from './components/Ground.jsx'
 import GroundBlocks from './components/GroundBlocks.jsx'
 import SlopeBlock from './components/SlopeBlock.jsx'
 import SideWalls from './components/SideWalls.jsx'
+import Stage2Walls from './components/Stage2Walls.jsx'
+import Stage3Walls from './components/Stage3Walls.jsx'
+import Stage4Walls from './components/Stage4Walls.jsx'
+import Stage5Walls from './components/Stage5Walls.jsx'
+import Stage6Walls from './components/Stage6Walls.jsx'
+import Stage7Walls from './components/Stage7Walls.jsx'
+import Stage8Walls from './components/Stage8Walls.jsx'
+import Stage9Walls from './components/Stage9Walls.jsx'
+import Stage10Walls from './components/Stage10Walls.jsx'
+import Stage11Walls from './components/Stage11Walls.jsx'
+import Stage12Walls from './components/Stage12Walls.jsx'
 import StageWalls from './components/StageWalls.jsx'
 import Hammer from './components/Hammer.jsx'
+import CrusherWalls from './components/CrusherWalls.jsx'
 import RampBlock from './components/RampBlock.jsx'
 import Road from './components/Road.jsx'
+import DisplayPodium from './components/DisplayPodium.jsx'
 import Player from './components/Player.jsx'
-import Treadmill from './components/Treadmill.jsx'
+import Treadmills from './components/Treadmills.jsx'
 import TeleportGate from './components/TeleportGate.jsx'
 import GiantBall from './components/GiantBall.jsx'
 import Sahur from './components/Sahur.jsx'
@@ -59,14 +72,27 @@ export default function App() {
           <Sahur />
           <GlowFloorPanels />
           <Hammer />
+          <CrusherWalls />
           <RampBlock />
         </Suspense>
         <Road />
+        <DisplayPodium />
         <Player />
-        <Treadmill />
+        <Treadmills />
         <TeleportGate />
         <GiantBall />
         <SideWalls />
+        <Stage2Walls />
+        <Stage3Walls />
+        <Stage4Walls />
+        <Stage5Walls />
+        <Stage6Walls />
+        <Stage7Walls />
+        <Stage8Walls />
+        <Stage9Walls />
+        <Stage10Walls />
+        <Stage11Walls />
+        <Stage12Walls />
         <StageWalls />
       </Canvas>
       <Hud />

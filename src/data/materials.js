@@ -13,4 +13,5 @@ export const MATERIAL_PBR = {
   GIANT_BALL: { roughness: 0.4, metalness: 0.05 }, // smooth-ish plastic/rubber sphere
   SIDE_WALL: { roughness: 0.9, metalness: 0 }, // Stage1 boundary guard walls — tune independently of GROUND
   STAGE_WALL: { roughness: 0.05, metalness: 0 }, // ~80% transparent glass stage dividers — smooth/glossy dielectric
+  DISPLAY_PODIUM: { roughness: 0.8, metalness: 0.05 }, // matte dark-gray tiered display stand
 }

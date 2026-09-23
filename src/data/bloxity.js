@@ -109,7 +109,12 @@ export const GAIT = {
 
   airborneLegL: -0.55,
   airborneLegR: 0.3,
-  airborneArm: -2.1,
+  // Arms blend continuously between these two off player.velocity.y instead
+  // of holding one fixed pose, so they read up while rising and drop while
+  // falling, crossing smoothly through 0 at the jump's apex.
+  airborneArmUp: -2.6, // arm angle at/above +airborneArmVelRef vertical speed (rising)
+  airborneArmDown: -1.2, // arm angle at/below -airborneArmVelRef vertical speed (falling)
+  airborneArmVelRef: 6, // m/s of vertical speed at which the up/down blend saturates
   airborneLean: -0.1,
 
   turnRate: 0.001, // base of 1 - turnRate^delta; smaller = snappier turn
