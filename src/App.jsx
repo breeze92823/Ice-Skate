@@ -49,7 +49,7 @@ export default function App() {
           antialias: true,
           powerPreference: 'high-performance',
           toneMapping: ACESFilmicToneMapping,
-          toneMappingExposure: 1.2,
+          toneMappingExposure: 1.4,
           outputColorSpace: SRGBColorSpace,
         }}
         camera={{ fov: 55, near: 0.1, far: 200, position: [0, 6, 12] }}
@@ -60,7 +60,7 @@ export default function App() {
             just popping into view down a long corridor) blends into the
             horizon instead of appearing as a hard line. */}
         <fog attach="fog" args={['#bcdcff', 90, 190]} />
-        <hemisphereLight args={['#eaf3ff', '#b7a98f', 1.1]} />
+        <hemisphereLight args={['#eaf3ff', '#b7a98f', 1.4]} />
         <ShadowSun />
 
         <GameLoop />
