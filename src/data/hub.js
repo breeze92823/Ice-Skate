@@ -27,6 +27,6 @@ export const SPAWN = { x: 0, y: GROUND_Y, z: 0 }
 // Blender/world.blend's "Treadmill" object (see project-blender-previz-rig
 // memory for the rig-rotation conversion this position/yaw was derived
 // through).
-export const TREADMILL_POSITION = [16.213, GROUND_Y, -63.659]
+export const TREADMILL_POSITION = [-2, GROUND_Y, -63.659]
 export const TREADMILL_ROTATION_Y = 0
 

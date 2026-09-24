@@ -3,6 +3,7 @@ import { MeshStandardMaterial } from 'three'
 import { Text } from '@react-three/drei'
 import { MATERIAL_PBR } from '../data/materials.js'
 import { makeStudTexture } from '../systems/studTexture.js'
+import { SKATE_RACK_SIGN, SKATE_RACK_SCALE, SKATE_RACK_POSITION, skateRackRowTopY } from '../data/skateRack.js'
 import {
   HUB_WALLS,
   HUB_ROOF,
@@ -37,6 +38,36 @@ const BEAM_LABEL_COLOR = '#ffffff'
 const BEAM_LABEL_OUTLINE_WIDTH = 0.04
 const BEAM_LABEL_OUTLINE_COLOR = '#000000'
 const BEAM_LABEL_FORWARD_OFFSET = 0.02 // metres clear of the beam's own front face
+
+// "Test" sign mounted on HubWall.south's own room-facing face — a duplicate
+// of components/SkateRackSign.jsx's board (backing box + face plate + Text,
+// same SKATE_RACK_SIGN dimensions/materials) in place of a bare floating
+// Text label, so it reads as a proper mounted sign. Same static
+// (non-Billboard) convention as that board and components/StageWalls.jsx.
+// Unlike SkateRackSign's group (mesh/face/Text all at local origin/offsets),
+// this wall has no natural local origin to nest the board in, so the group's
+// own position is derived here instead: the room lies toward +Z from the
+// south wall (data/hubWalls.js's SOUTH_BEAMS use faceSign=1, the opposite of
+// the north wall's beams), so — like SkateRackSign's board, which also faces
+// +Z — no extra yaw is needed, just placing the board's back face
+// SOUTH_WALL_SIGN_CLEARANCE clear of the wall's own +Z face. Also scaled by
+// SKATE_RACK_SCALE, same as SkateRackSign itself — it's only ever rendered
+// nested inside SkateRack.jsx's own `scale={SKATE_RACK_SCALE}` group, so its
+// SIGN_W/H/THICK dimensions are local (pre-scale) values; this group applies
+// that same scale directly since HubWalls has no such scaled ancestor.
+const { width: SOUTH_WALL_SIGN_W, height: SOUTH_WALL_SIGN_H, thick: SOUTH_WALL_SIGN_THICK } = SKATE_RACK_SIGN
+const SOUTH_WALL = HUB_WALLS.find((wall) => wall.name === 'HubWall.south')
+const SOUTH_WALL_SIGN_TEXT = 'Train'
+const SOUTH_WALL_SIGN_CLEARANCE = 0.8 // metres clear of the wall's own room-facing face, incl. 2m requested shift
+// Same world Y as SkateRackSign's own board: its group sits at local
+// (backTopY + clearance + height/2) inside SkateRack.jsx's own
+// position={SKATE_RACK_POSITION} scale={SKATE_RACK_SCALE} group, so that
+// local Y has to be scaled and offset the same way here since HubWalls has
+// no such scaled ancestor of its own.
+const SOUTH_WALL_SIGN_Y =
+  SKATE_RACK_POSITION[1] + (skateRackRowTopY(1) + SKATE_RACK_SIGN.clearance + SKATE_RACK_SIGN.height / 2) * SKATE_RACK_SCALE
+const SOUTH_WALL_SIGN_Z =
+  SOUTH_WALL.position[2] + SOUTH_WALL.size[2] / 2 + SOUTH_WALL_SIGN_CLEARANCE + (SOUTH_WALL_SIGN_THICK * SKATE_RACK_SCALE) / 2
 
 // BoxGeometry's default face order is [+X, -X, +Y, -Y, +Z, -Z].
 function buildMaterialsForSize(width, height, depth) {
@@ -115,6 +146,32 @@ export default function HubWalls() {
       >
         {BEAM_LABEL_TEXT}
       </Text>
+      {/* Duplicate of SkateRackSign's board — backing box + face plate + Text,
+          same structure/materials, just mounted on the south wall instead of
+          nested behind the skate rack's back row. */}
+      <group position={[SOUTH_WALL.position[0], SOUTH_WALL_SIGN_Y, SOUTH_WALL_SIGN_Z]} scale={SKATE_RACK_SCALE}>
+        <mesh castShadow receiveShadow>
+          <boxGeometry args={[SOUTH_WALL_SIGN_W, SOUTH_WALL_SIGN_H, SOUTH_WALL_SIGN_THICK]} />
+          <meshStandardMaterial color="#23262c" {...MATERIAL_PBR.SKATE_RACK_SIGN_BEZEL} />
+        </mesh>
+        <mesh position={[0, 0, SOUTH_WALL_SIGN_THICK / 2 + 0.005]} castShadow={false}>
+          <planeGeometry args={[SOUTH_WALL_SIGN_W * 0.92, SOUTH_WALL_SIGN_H * 0.8]} />
+          <meshStandardMaterial color="#2fb6e8" {...MATERIAL_PBR.SKATE_RACK_SIGN_FACE} />
+        </mesh>
+        <Text
+          position={[0, 0, SOUTH_WALL_SIGN_THICK / 2 + 0.02]}
+          fontSize={0.46}
+          fontWeight="bold"
+          letterSpacing={0.02}
+          color="#ffffff"
+          outlineWidth={0.025}
+          outlineColor="#0a4a63"
+          anchorX="center"
+          anchorY="middle"
+        >
+          {SOUTH_WALL_SIGN_TEXT}
+        </Text>
+      </group>
     </>
   )
 }
