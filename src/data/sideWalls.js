@@ -206,27 +206,99 @@ export const SIDE_WALL_JOGS = [
 // Own width/height/depth (not SIDE_WALLS' shared size) — components/
 // SideWalls.jsx gives it its own stud-texture repeat sized to these
 // dimensions rather than reusing SIDE_WALLS' shared materials, which are
-// sized for the much longer/thinner wall segments.
+// sized for the much longer/thinner wall segments. Depth doubled to
+// 1.7368194580078125 (was 0.8684097290039062) and given a darker shade
+// (components/SideWalls.jsx's BEAM_LIGHT/DARK) than SIDE_WALLS' own
+// grey, so all three pairs read as a distinct chunkier pilaster style —
+// this replaced the original thinner/grey seam-only treatment at all three
+// positions (two seams + the mid-span pair below), not just the mid one.
 export const SIDE_WALL_BEAMS = [
   {
     name: 'SideWallBeam.right.1',
     position: [10.043127059936523, 8.4904203414917, 55.39304733276367],
-    size: [3, 16.74774742126465, 0.8684097290039062],
+    size: [3, 16.74774742126465, 1.7368194580078125],
   },
   {
     name: 'SideWallBeam.left.1',
     position: [-10.071032524108887, 8.4904203414917, 55.39304733276367],
-    size: [3, 16.74774742126465, 0.8684097290039062],
+    size: [3, 16.74774742126465, 1.7368194580078125],
   },
   {
     name: 'SideWallBeam.right.2',
     position: [10.043127059936523, 8.4904203414917, 90.68211746215820],
-    size: [3, 16.74774742126465, 0.8684097290039062],
+    size: [3, 16.74774742126465, 1.7368194580078125],
   },
   {
     name: 'SideWallBeam.left.2',
     position: [-10.071032524108887, 8.4904203414917, 90.68211746215820],
-    size: [3, 16.74774742126465, 0.8684097290039062],
+    size: [3, 16.74774742126465, 1.7368194580078125],
+  },
+  // Mid-span pair — not a seam-filler like the four above (no gap to close
+  // here), just centered on Side_Wall.002/.003 themselves (z
+  // 73.03758239746094, same x as that pair) to break up the long run
+  // between the two seam beams (55.39 and 90.68). Same size/style as the
+  // rest of this array.
+  {
+    name: 'SideWallBeam.right.mid',
+    position: [10.043127059936523, 8.4904203414917, 73.03758239746094],
+    size: [3, 16.74774742126465, 1.7368194580078125],
+  },
+  {
+    name: 'SideWallBeam.left.mid',
+    position: [-10.071032524108887, 8.4904203414917, 73.03758239746094],
+    size: [3, 16.74774742126465, 1.7368194580078125],
+  },
+  // Same mid-span treatment, one segment further down — centered on
+  // SideWallExt.right/.left (z 108.32665252685547, same x as that pair).
+  // No matching far-end seam pair the way SideWallExt's *near* end already
+  // has one (right.2/left.2 above, at the Side_Wall.002/.003 seam):
+  // SideWallExt's far end (125.83698272705078) isn't a straight seam, it's
+  // where the corridor bends outward into SIDE_WALL_BULGES — already closed
+  // by SIDE_WALL_JOGS' .in elbow connector, not a straight pilaster (see
+  // that array's comment for why no SideWallBeam.right/left.3 exists).
+  {
+    name: 'SideWallBeam.right.ext.mid',
+    position: [10.043127059936523, 8.4904203414917, 108.32665252685547],
+    size: [3, 16.74774742126465, 1.7368194580078125],
+  },
+  {
+    name: 'SideWallBeam.left.ext.mid',
+    position: [-10.071032524108887, 8.4904203414917, 108.32665252685547],
+    size: [3, 16.74774742126465, 1.7368194580078125],
+  },
+  // Same mid-span treatment continued onto SIDE_WALL_BULGES (the alcove
+  // around WinPad.002) — centered on its own z (136.17398071289062) at its
+  // own (wider) x (SideWallBulge.right/.left's own position.x, not the
+  // normal-line x used everywhere else above). Both bulge/jog-adjacent
+  // seams (SIDE_WALL_JOGS' .in/.out elbows at either end) are still bends,
+  // not straight joins, so — same reasoning as SideWallExt's far edge above
+  // — no seam beam at either elbow, just this one mid-span pair.
+  {
+    name: 'SideWallBeam.right.bulge.mid',
+    position: [15.165148735046387, 8.4904203414917, 136.17398071289062],
+    size: [3, 16.74774742126465, 1.7368194580078125],
+  },
+  {
+    name: 'SideWallBeam.left.bulge.mid',
+    position: [-15.19305419921875, 8.4904203414917, 136.17398071289062],
+    size: [3, 16.74774742126465, 1.7368194580078125],
+  },
+  // Same mid-span treatment continued onto SIDE_WALL_END_CAPS, the final
+  // segment before StageWall.002 — centered on its own z
+  // (151.27563110142947), back at the normal-line x (same as SIDE_WALLS).
+  // No seam beam at its near edge (SIDE_WALL_JOGS' .out elbow, same bend
+  // reasoning as above) or its far edge (flush 0-gap join with
+  // StageWall.002 — see SIDE_WALL_END_CAPS' own comment for why that joint
+  // never gets a beam either).
+  {
+    name: 'SideWallBeam.right.endcap.mid',
+    position: [10.043127059936523, 8.4904203414917, 151.27563110142947],
+    size: [3, 16.74774742126465, 1.7368194580078125],
+  },
+  {
+    name: 'SideWallBeam.left.endcap.mid',
+    position: [-10.071032524108887, 8.4904203414917, 151.27563110142947],
+    size: [3, 16.74774742126465, 1.7368194580078125],
   },
 ]
 

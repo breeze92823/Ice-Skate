@@ -27,16 +27,22 @@ import {
 // size, so one set of 3 materials covers both.
 const LIGHT = '#9398a0'
 const DARK = '#9398a0'
+// SIDE_WALL_BEAMS only — every other wall/roof piece here uses LIGHT/DARK
+// above. Same flat (light === dark) grey as LIGHT/DARK, just darkened ~25%
+// so the beams read as a distinct pilaster against the rest of the wall.
+const BEAM_LIGHT = '#6e7278'
+const BEAM_DARK = '#6e7278'
 const CELL = 1 // metres per checker cell
 const STUDS_PER_CELL = 4 // studs per cell, each stud on a CELL/STUDS_PER_CELL = 0.5m pitch
 
 // One face-pair's texture + material, sized to that pair's own real
 // dimensions so the stud pitch stays consistent (CELL metres/tile) instead
-// of stretching to fit a different pair's aspect ratio.
-function useFaceMaterial(repeatX, repeatY) {
+// of stretching to fit a different pair's aspect ratio. `light`/`dark`
+// default to the shared grey but can be overridden per-call (SIDE_WALL_BEAMS).
+function useFaceMaterial(repeatX, repeatY, light = LIGHT, dark = DARK) {
   const texture = useMemo(
-    () => makeStudTexture({ light: LIGHT, dark: DARK, studsPerCell: STUDS_PER_CELL, repeatX, repeatY }),
-    [repeatX, repeatY]
+    () => makeStudTexture({ light, dark, studsPerCell: STUDS_PER_CELL, repeatX, repeatY }),
+    [repeatX, repeatY, light, dark]
   )
   const material = useMemo(
     () => new MeshStandardMaterial({ map: texture, ...MATERIAL_PBR.SIDE_WALL }),
@@ -101,14 +107,15 @@ export default function SideWalls() {
     [jogSideMaterial, jogTopMaterial, jogEndMaterial]
   )
 
-  // Gap-closing beams (SIDE_WALL_BEAMS) are a pilaster shape — wider (it
-  // protrudes past the wall's outer face) and shallower than SIDE_WALLS —
-  // so `materials` above would stretch the stud tiles across every face.
-  // Give them their own repeat set, sized to the beam's own dimensions.
+  // Gap-closing/mid-span beams (SIDE_WALL_BEAMS) are a pilaster shape —
+  // wider (protrudes past the wall's outer face) and shallower than
+  // SIDE_WALLS, and a darker shade than the rest of the wall — so
+  // `materials` above would neither fit nor look right. Own repeat set,
+  // sized to the beam's own dimensions.
   const [beamWidth, beamHeight, beamDepth] = SIDE_WALL_BEAMS[0].size
-  const beamSideMaterial = useFaceMaterial(beamDepth / (CELL * 2), beamHeight / (CELL * 2)) // ±X
-  const beamTopMaterial = useFaceMaterial(beamWidth / (CELL * 2), beamDepth / (CELL * 2)) // ±Y
-  const beamEndMaterial = useFaceMaterial(beamWidth / (CELL * 2), beamHeight / (CELL * 2)) // ±Z
+  const beamSideMaterial = useFaceMaterial(beamDepth / (CELL * 2), beamHeight / (CELL * 2), BEAM_LIGHT, BEAM_DARK) // ±X
+  const beamTopMaterial = useFaceMaterial(beamWidth / (CELL * 2), beamDepth / (CELL * 2), BEAM_LIGHT, BEAM_DARK) // ±Y
+  const beamEndMaterial = useFaceMaterial(beamWidth / (CELL * 2), beamHeight / (CELL * 2), BEAM_LIGHT, BEAM_DARK) // ±Z
   const beamMaterials = useMemo(
     () => [beamSideMaterial, beamSideMaterial, beamTopMaterial, beamTopMaterial, beamEndMaterial, beamEndMaterial],
     [beamSideMaterial, beamTopMaterial, beamEndMaterial]
