@@ -1,10 +1,11 @@
 // Solid ground-block props imported from Blender/world.blend's "GroundBlock"
-// through "GroundBlock.005" collections (Stage1-Stage6 — Blender
+// through "GroundBlock.012" collections (Stage1-Stage13 — Blender
 // auto-suffixed each later one on name collision) — each object there is a
 // plain duplicate of Ground (no modifiers), placed independently with its
 // own transform, and unparented (no rig, no local counter-rotation). Note:
-// most blocks sit at Blender x=0, but the Ground.016-023 cluster and a few
-// GroundBlock.005 blocks have nonzero x — don't assume x=0 when re-syncing.
+// most blocks sit at Blender x=0, but the Ground.016-023 cluster, a few
+// GroundBlock.005 blocks, and the GroundBlock.006 (Stage7) cluster have
+// nonzero x — don't assume x=0 when re-syncing.
 // Only transform is imported from Blender;
 // geometry/material come from the game's own GroundBlock helper (Ground.jsx,
 // same stud-textured GLB as the main island) — see
@@ -27,6 +28,17 @@
 // Ground.014. Because a rotation about Blender's local X axis is invariant
 // under the axis-swap above (X maps straight through), `rotationX` here
 // equals the object's raw `rotation_euler.x` — no extra conversion needed.
+//
+// `rotationY` (optional, three.js radians, default 0) supports the
+// GroundBlock.006 (Stage7) pillar cluster, which is yawed about Blender's
+// vertical Z axis rather than tilted — verified algebraically (and against
+// this cluster) that a Blender Z-axis rotation maps straight through to a
+// three.js Y-axis rotation of the same signed angle under the axis-swap
+// above, so `rotationY` here equals the object's raw `rotation_euler.z`, no
+// extra conversion needed either. Rendered in GroundBlocks.jsx via
+// `rotation={[rotationX, rotationY, 0]}` and collided against in
+// playerMovement.js's `groundBlockTopAt` (which yaw-rotates the test point
+// into the block's local frame before the existing rotationX projection).
 //
 // Slope_Block is NOT a duplicate of Ground like every other entry here —
 // it's a genuinely custom-edited mesh (a tapered, beveled ramp shape, not a
@@ -71,61 +83,61 @@ const SLOPE_BLOCK_ROTATION_X = -0.1745329201221466
 export const GROUND_BLOCKS = [
   {
     name: 'Ground.001',
-    position: [0, 2.990000009536743, 31.020584106445312],
+    position: [0, 3, 31.020584106445312],
     size: [33.651187896728516, 6, 21.64034080505371], // width, thickness (height), depth
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.002',
-    position: [0, 2.990000009536743, 47.146671295166016],
+    position: [0, 3, 47.146671295166016],
     size: [33.651187896728516, 6, 8.800000190734863],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.003',
-    position: [0, 2.990000009536743, 57.83223342895508],
+    position: [0, 3, 57.83223342895508],
     size: [33.651187896728516, 6, 10],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.004',
-    position: [0, 2.990000009536743, 69.50313568115234],
+    position: [0, 3, 69.50313568115234],
     size: [33.651187896728516, 6, 9],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.005',
-    position: [0, 2.990000009536743, 79.20074462890625],
+    position: [0, 3, 79.20074462890625],
     size: [33.651187896728516, 6, 9],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.006',
-    position: [0, 2.990000009536743, 90.82257080078125],
+    position: [0, 3, 90.82257080078125],
     size: [33.651187896728516, 6, 12.363219261169434],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.007',
-    position: [0, 2.990000009536743, 105.62158966064453],
+    position: [0, 3, 105.62158966064453],
     size: [33.651187896728516, 6, 9],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.008',
-    position: [0, 2.990000009536743, 116.97642517089844],
+    position: [0, 3, 116.97642517089844],
     size: [33.651187896728516, 6, 12.363219261169434],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.009',
-    position: [0, 2.990000009536743, 140.448486328125],
+    position: [0, 3, 140.448486328125],
     size: [33.651187896728516, 6, 31.338233947753906],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.010',
-    position: [0, 2.990000009536743, 198.6915283203125],
+    position: [0, 3, 198.6915283203125],
     size: [33.651187896728516, 6, 65.76907348632812],
     ...GROUND_BLOCK_COLOR,
   },
@@ -143,7 +155,7 @@ export const GROUND_BLOCKS = [
   },
   {
     name: 'Ground.013',
-    position: [0, 2.990000009536743, 257.0271301269531],
+    position: [0, 3, 257.0271301269531],
     size: [33.651187896728516, 6, 31.338233947753906],
     ...GROUND_BLOCK_COLOR,
   },
@@ -169,7 +181,7 @@ export const GROUND_BLOCKS = [
   },
   {
     name: 'Ground.015',
-    position: [0, 16.895078659057617, 386.8052978515625],
+    position: [0, 16.957406997680664, 386.8052978515625],
     size: [33.651187896728516, 6, 31.338233947753906],
     ...GROUND_BLOCK_COLOR,
   },
@@ -229,71 +241,259 @@ export const GROUND_BLOCKS = [
   },
   {
     name: 'Ground.025',
-    position: [0, 15.110108375549316, 592.5717163085938],
+    position: [0, 15.110108375549320, 592.5717163085938],
     size: [13.800000190734863, 6, 10],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.026',
-    position: [0, 15.10010814666748, 557.5137329101562],
+    position: [0, 15.110108375549320, 557.5137329101562],
     size: [13.5, 6, 60.146907806396484],
+    // Loops through solid -> fade-out -> fully hidden -> fade-in -> solid on
+    // a shared timer (systems/groundPhase.js) — GroundBlocks.jsx animates
+    // its material opacity/visibility from it, playerMovement.js skips
+    // collision against it whenever that timer says not collidable.
+    phasing: true,
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.027',
-    position: [0, 15.110108375549316, 517.062255859375],
+    position: [0, 15.10010814666748, 517.062255859375],
     size: [13.800000190734863, 6, 10],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.028',
-    position: [0, 15.10010814666748, 612.6755981445312],
-    size: [33.651187896728516, 6, 31.338233947753906],
+    position: [0, 8.676575660705570, 612.6755981445312],
+    size: [33.651187896728516, 18.8670654296875, 31.338232040405273],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.029',
-    position: [0, 15.10010814666748, 653.318115234375],
-    size: [13.5, 6, 16.560832977294922],
+    position: [29.151721954345703, 8.726423263549805, 671.8711547851562],
+    size: [16.845552444458008, 18.8670654296875, 36.526329040527344],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.030',
-    position: [0, 15.110108375549316, 736.4758911132812],
-    size: [13.800000190734863, 6, 10],
+    position: [-2.039417266845703, 1.1438677310943604, 755.3882446289062],
+    size: [24.467222213745117, 33.45106506347656, 17.72987174987793],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.031',
-    position: [0, 15.110108375549316, 633.1935424804688],
-    size: [13.800000190734863, 6, 10],
+    position: [0, 8.676575660705570, 641.974365234375],
+    size: [13.800000190734863, 18.8670654296875, 27.650508880615234],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.032',
-    position: [-19.8444881439209, 15.10010814666748, 676.94482421875],
-    size: [33.70528793334961, 6, 19.598655700683594],
+    position: [-1.7163410186767578, 8.726423263549805, 670.2883911132812],
+    size: [23.474353790283203, 18.8670654296875, 19.598655700683594],
     ...GROUND_BLOCK_COLOR,
   },
   {
-    // Note: identical position/size to Ground.034 (verified in Blender,
-    // not a conversion bug) — looks like an accidental exact-duplicate
-    // object in the source file rather than an intentional overlap.
     name: 'Ground.033',
-    position: [9.023165702819824, 15.10010814666748, 699.4234008789062],
-    size: [27.421344757080078, 6, 16.560832977294922],
+    position: [-32.7098274230957, 8.726423263549805, 708.041015625],
+    size: [23.474353790283203, 18.8670654296875, 19.598655700683594],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.034',
-    position: [9.023165702819824, 15.10010814666748, 699.4234008789062],
-    size: [27.421344757080078, 6, 16.560832977294922],
+    position: [-1.7163400650024414, 8.726423263549805, 708.041015625],
+    size: [23.474353790283203, 18.8670654296875, 19.598655700683594],
     ...GROUND_BLOCK_COLOR,
   },
   {
     name: 'Ground.035',
-    position: [-2.89853572845459, 15.10010814666748, 720.2020874023438],
-    size: [21.780887603759766, 6, 16.560832977294922],
+    position: [-1.7163400650024414, 8.726423263549805, 732.5452880859375],
+    size: [12.398195266723633, 18.8670654296875, 21.261016845703125],
+    ...GROUND_BLOCK_COLOR,
+  },
+  // Ground.050/051 — GroundBlock.005 (Stage6) members as of the 2026-09-23
+  // resync (Blender renamed the former Ground.044/045 to these numbers;
+  // transforms are unchanged from the prior sync).
+  {
+    name: 'Ground.050',
+    position: [-32.7098274230957, 8.726423263549805, 670.2883911132812],
+    size: [23.474353790283203, 18.8670654296875, 19.598655700683594],
+    ...GROUND_BLOCK_COLOR,
+  },
+  {
+    name: 'Ground.051',
+    position: [-59.26808547973633, 8.726423263549805, 689.4653930664062],
+    size: [19.164268493652344, 18.8670654296875, 59.038753509521484],
+    ...GROUND_BLOCK_COLOR,
+  },
+  // GroundBlock.006 (Stage7) — a cluster of tall yawed pillars zigzagging
+  // between two flat landings, re-synced 2026-09-23: Blender renumbered
+  // several of these objects since the last sync (names below reflect
+  // current Blender names, not necessarily the same object identity as
+  // whatever previously held that number — see project-stage-layout memory,
+  // always re-read fresh rather than trusting old names).
+  {
+    name: 'Ground.036',
+    position: [0, -2.2282285690307617, 949.9338989257812],
+    size: [41.74809646606445, 40.98118591308594, 15.934730529785156],
+    ...GROUND_BLOCK_COLOR,
+  },
+  {
+    name: 'Ground.037',
+    position: [-15.936171531677246, -4.0180983543396, 886.31689453125],
+    size: [19, 44.64799499511719, 19],
+    rotationY: -0.1025393158197403,
+    ...GROUND_BLOCK_COLOR,
+  },
+  {
+    name: 'Ground.038',
+    position: [9.023165702819824, -4.0180983543396, 875.3388671875],
+    size: [19, 44.64799499511719, 19],
+    rotationY: -0.012672558426856995,
+    ...GROUND_BLOCK_COLOR,
+  },
+  {
+    name: 'Ground.039',
+    position: [-19.8444881439209, -4.0180983543396, 843.6242065429688],
+    size: [19, 44.64799499511719, 19],
+    rotationY: 0.44257375597953796,
+    ...GROUND_BLOCK_COLOR,
+  },
+  {
+    name: 'Ground.040',
+    position: [0, -2.2282285690307617, 799.8729248046875],
+    size: [41.74809646606445, 40.98118591308594, 10],
+    ...GROUND_BLOCK_COLOR,
+  },
+  {
+    name: 'Ground.041',
+    position: [-21.360549926757812, -4.0180983543396, 816.9404296875],
+    size: [19, 44.64799499511719, 19],
+    ...GROUND_BLOCK_COLOR,
+  },
+  {
+    name: 'Ground.042',
+    position: [0, -2.29653263092041, 779.35498046875],
+    size: [33.651187896728516, 40.98118591308594, 31.338232040405273],
+    ...GROUND_BLOCK_COLOR,
+  },
+  {
+    name: 'Ground.043',
+    position: [9.023165702819824, -4.0180983543396, 849.5947875976562],
+    size: [19, 44.64799499511719, 19],
+    rotationY: -0.40961167216300964,
+    ...GROUND_BLOCK_COLOR,
+  },
+  {
+    name: 'Ground.044',
+    position: [7.173346519470215, -4.0180983543396, 905.5481567382812],
+    size: [19, 44.64799499511719, 19],
+    rotationY: 0.16562804579734802,
+    ...GROUND_BLOCK_COLOR,
+  },
+  {
+    name: 'Ground.045',
+    position: [-2.4556198120117188, -4.0180983543396, 928.8983764648438],
+    size: [19, 44.64799499511719, 19],
+    rotationY: -0.1926269382238388,
+    ...GROUND_BLOCK_COLOR,
+  },
+  // GroundBlock.007 (Stage8) — synced 2026-09-23.
+  {
+    name: 'Ground.046',
+    position: [0, -2.29653263092041, 973.0548095703125],
+    size: [33.651187896728516, 40.98118591308594, 31.338232040405273],
+    ...GROUND_BLOCK_COLOR,
+  },
+  {
+    name: 'Ground.047',
+    position: [-28.392040252685547, -2.4787490367889404, 1003.05908203125],
+    size: [142.8367919921875, 40.98118591308594, 28.87409019470215],
+    ...GROUND_BLOCK_COLOR,
+  },
+  // GroundBlock.008 (Stage9) — synced 2026-09-23.
+  {
+    name: 'Ground.048',
+    position: [-201.19317626953125, -2.4787490367889404, 1003.05908203125],
+    size: [142.8367919921875, 40.98118591308594, 28.87409019470215],
+    ...GROUND_BLOCK_COLOR,
+  },
+  {
+    name: 'Ground.049',
+    position: [-115.45283508300781, -2.29653263092041, 1003.1856689453125],
+    size: [33.651187896728516, 40.98118591308594, 31.338232040405273],
+    rotationY: -1.5707963705062866,
+    ...GROUND_BLOCK_COLOR,
+  },
+  // GroundBlock.009 (Stage10) — synced 2026-09-23.
+  {
+    name: 'Ground.052',
+    position: [-287.9387512207031, -2.29653263092041, 1003.1856689453125],
+    size: [33.651187896728516, 40.98118591308594, 31.338232040405273],
+    rotationY: -1.5707963705062866,
+    ...GROUND_BLOCK_COLOR,
+  },
+  {
+    name: 'Ground.053',
+    position: [-314.2426452636719, -2.4787490367889404, 1003.05908203125],
+    size: [21.41473388671875, 40.98118591308594, 2.5],
+    ...GROUND_BLOCK_COLOR,
+  },
+  {
+    name: 'Ground.054',
+    position: [-325.5093688964844, 63.45986557006836, 1003.05908203125],
+    size: [1.1285537481307983, 96.1390609741211, 2.5],
+    // Bridges Ground.053's platform (top ~18) up to the Ground.055/.056
+    // plateau (top ~111.3-111.5) it sits flush against — climbable like a
+    // ladder (systems/ladderCollision.js) instead of solid on its sides
+    // (playerMovement.js's resolveGroundBlocks/groundBlockTopAt both skip
+    // `ladder` blocks) so holding forward against it climbs straight up
+    // its face rather than just blocking the player.
+    ladder: true,
+    ...GROUND_BLOCK_COLOR,
+  },
+  // GroundBlock.010 (Stage11) — re-synced 2026-09-23 (Blender edited
+  // Ground.053-055 again after the same-day sync above: .053/.054 moved in
+  // x and .053/.054 narrowed, .055 also moved in x and grew in local depth
+  // (raw z-dimension 31.34 -> 40.45)). Re-synced again same day: .055 grew
+  // much taller (thickness 40.98 -> 163.34) and dropped in y (90.87 ->
+  // 29.57) — Stage11's spawn (blockSpawn('Ground.055')) moves with it.
+  {
+    name: 'Ground.055',
+    position: [-346.31671142578125, 29.574045181274414, 1003.1856689453125],
+    size: [33.651187896728516, 163.34149169921875, 40.45344924926758],
+    rotationY: -1.5707963705062866,
+    // Uses the guard-wall Side_Wall material/color instead of the usual
+    // ground checker, on request — GroundBlocks.jsx reads this flag.
+    sideWallMaterial: true,
+  },
+  // GroundBlock.011 (Stage12) — synced 2026-09-23.
+  {
+    name: 'Ground.056',
+    position: [-651.2061767578125, 90.87358093261719, 1003.1856689453125],
+    size: [33.651187896728516, 40.98118591308594, 31.338232040405273],
+    rotationY: -1.5707963705062866,
+    ...GROUND_BLOCK_COLOR,
+  },
+  {
+    name: 'Ground.057',
+    position: [-742.4451904296875, 90.87358093261719, 1003.1856689453125],
+    size: [136.59722900390625, 40.98118591308594, 151.28765869140625],
+    rotationY: -1.5707963705062866,
+    ...GROUND_BLOCK_COLOR,
+  },
+  // GroundBlock.012 (Stage13) — synced 2026-09-23.
+  {
+    name: 'Ground.058',
+    position: [-860.792724609375, 90.87358093261719, 1003.1856689453125],
+    size: [51.315826416015625, 40.98118591308594, 24.302705764770508],
+    rotationY: -1.5707963705062866,
+    ...GROUND_BLOCK_COLOR,
+  },
+  {
+    name: 'Ground.059',
+    position: [-832.9556274414062, 90.87358093261719, 1003.1856689453125],
+    size: [33.651187896728516, 40.98118591308594, 31.338232040405273],
+    rotationY: -1.5707963705062866,
     ...GROUND_BLOCK_COLOR,
   },
 ]

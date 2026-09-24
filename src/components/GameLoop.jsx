@@ -1,6 +1,8 @@
 import { useThree, useFrame } from '@react-three/fiber'
 import { tick } from '../systems/timeScale.js'
 import { step } from '../systems/playerMovement.js'
+import { step as stepShadowSun } from '../systems/shadowSun.js'
+import { step as stepGroundPhase } from '../systems/groundPhase.js'
 import { step as stepGiantBall } from '../systems/giantBallPhysics.js'
 import { step as stepGiantBallCrush } from '../systems/giantBallCrush.js'
 import { step as stepSahurFollow } from '../systems/sahurFollow.js'
@@ -10,6 +12,17 @@ import { step as stepPlayerHealth } from '../systems/playerHealth.js'
 import { step as stepAfk } from '../systems/afk.js'
 import { step as stepHexPowerPad } from '../systems/hexPowerPad.js'
 import { step as stepGlowFloorPanel } from '../systems/glowFloorPanel.js'
+import { step as stepTreadmillAnim } from '../systems/treadmillAnim.js'
+import { step as stepSpeedGain } from '../systems/speedGain.js'
+import { step as stepPlayTime } from '../systems/playTime.js'
+import { step as stepHammer } from '../systems/hammerAnim.js'
+import { step as stepHammerCrush } from '../systems/hammerCrush.js'
+import { step as stepCrusherAnim } from '../systems/crusherAnim.js'
+import { step as stepCrusherCrush } from '../systems/crusherCrush.js'
+import { step as stepCrusherSideAnim } from '../systems/crusherSideAnim.js'
+import { step as stepCrusherSideCrush } from '../systems/crusherSideCrush.js'
+import { step as stepCrusherUpAnim } from '../systems/crusherUpAnim.js'
+import { step as stepCrusherUpCrush } from '../systems/crusherUpCrush.js'
 import { step as stepMerchant } from '../systems/merchant.js'
 import { step as stepTeleportGate } from '../systems/teleportGate.js'
 import { step as stepInteract } from '../systems/interact.js'
@@ -26,18 +39,38 @@ export default function GameLoop() {
   useFrame(() => {
     const dt = tick()
     stepPlayerHealth()
+    // Advance Ground.026's solid/fade/hidden loop before player movement
+    // reads groundPhase.collidable this frame, so the player's own
+    // collision this tick matches whatever state was just set.
+    stepGroundPhase(dt)
     step(dt)
+    stepShadowSun()
     stepGiantBall(dt)
     stepGiantBallCrush()
     stepSahurFollow(dt)
     stepSahurCrush()
     updateCamera(camera, dt)
-    // Project the player to the screen and age live popups before stepAction
-    // below can spawn new ones this frame.
+    // Project the player to the screen and age live popups before
+    // stepSpeedGain/stepAction below can spawn new ones this frame.
     stepActionPopups(dt, camera)
+    // Before stepSpeedGain, so its treadmill-occupied check reflects this
+    // frame's deck position rather than last frame's.
+    stepTreadmillAnim(dt)
+    // Walking-based Speed gain — every WALK_GAIN_INTERVAL seconds of
+    // unbroken movement input, or of standing on an occupied treadmill.
+    stepSpeedGain(dt)
+    stepPlayTime(dt)
     stepAfk()
     stepHexPowerPad()
     stepGlowFloorPanel()
+    stepHammer(dt)
+    stepHammerCrush()
+    stepCrusherAnim(dt)
+    stepCrusherCrush()
+    stepCrusherSideAnim(dt)
+    stepCrusherSideCrush()
+    stepCrusherUpAnim(dt)
+    stepCrusherUpCrush()
     stepMerchant()
     // Stage-select HUD panel's own proximity flag — a plain click target,
     // not one of the hold-to-confirm zones stepInteract resolves below.

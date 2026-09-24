@@ -1,10 +1,13 @@
-import { useEffect, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
-import { subscribe } from '../systems/avatarState.js'
+import { useEffect, useRef, useState } from 'react'
+import { useFrame, createPortal } from '@react-three/fiber'
+import { avatarState, subscribe } from '../systems/avatarState.js'
 import { applyProportions, buildAvatar, disposeAvatar } from '../systems/avatarModel.js'
+import { setAvatarReady, subscribeAvatarRetry } from '../systems/avatarReadiness.js'
 import { makeGait, updateGait, disposeGait } from '../systems/avatarAnim.js'
 import { player, setDims, resetDims } from '../systems/playerState.js'
-import { SPEED } from '../systems/playerMovement.js'
+import { anyTreadmillOccupied } from '../systems/treadmillAnim.js'
+import { TREADMILL_WALK_ANIM_SPEED } from '../data/treadmill.js'
+import { EquippedLegSkate } from './EquippedSkates.jsx'
 
 // Mounts the Bloxity avatar under Player's transform group. Presentation
 // only: all loading, rig maths and the run cycle live in
@@ -14,6 +17,11 @@ import { SPEED } from '../systems/playerMovement.js'
 export default function PlayerAvatar({ onReady }) {
   const groupRef = useRef(null)
   const gaitRef = useRef(null)
+  // LegL1/LegR1 (+ each leg's own sole offset) once a rig is built — drives
+  // the createPortal pair below that groups the equipped skate with each
+  // bone. React state (not a ref) because it must trigger a render: the
+  // portal target itself is JSX.
+  const [legBones, setLegBones] = useState(null)
 
   useEffect(() => {
     let built = null
@@ -31,7 +39,9 @@ export default function PlayerAvatar({ onReady }) {
         built = null
       }
       resetDims()
+      setLegBones(null)
       onReady(false)
+      setAvatarReady(false)
     }
 
     const rebuild = async (equipped, proportions) => {
@@ -56,7 +66,11 @@ export default function PlayerAvatar({ onReady }) {
       setDims(dims.radius, dims.height)
       groupRef.current.add(built.root)
       gaitRef.current = makeGait(built)
+      const legL = built.nodes.LegL1
+      const legR = built.nodes.LegR1
+      setLegBones(legL && legR ? { legL, legR, foot: built.legFoot } : null)
       onReady(true)
+      setAvatarReady(true)
     }
 
     const off = subscribe((state, reason) => {
@@ -69,10 +83,18 @@ export default function PlayerAvatar({ onReady }) {
       rebuild(state.equipped, state.proportions)
     })
 
+    // components/LoadingScreen.jsx's Retry button, once the base rig's own
+    // retry loop has already given up (avatarModel.js's
+    // BASE_RIG_MAX_ATTEMPTS) — kicks off a fresh rebuild from the current
+    // equipped/proportions rather than sitting on a backoff wait that no
+    // longer exists.
+    const offRetry = subscribeAvatarRetry(() => rebuild(avatarState.equipped, avatarState.proportions))
+
     return () => {
       disposed = true
       if (cancelToken) cancelToken.cancelled = true
       off()
+      offRetry()
       clear()
     }
   }, [onReady])
@@ -80,9 +102,18 @@ export default function PlayerAvatar({ onReady }) {
   useFrame((_, delta) => {
     const gait = gaitRef.current
     if (!gait) return
-    const speed = Math.hypot(player.velocity.x, player.velocity.z) / SPEED
-    updateGait(gait, Math.min(delta, 0.1), speed, player.grounded)
+    const moveSpeed = Math.hypot(player.velocity.x, player.velocity.z) / player.moveSpeed
+    // Standing still on a running treadmill belt (systems/treadmillAnim.js)
+    // still reads as walking, like stepping onto a real one, instead of the
+    // avatar idling in place while the belt scrolls under it.
+    const speed = anyTreadmillOccupied.value ? Math.max(moveSpeed, TREADMILL_WALK_ANIM_SPEED) : moveSpeed
+    updateGait(gait, Math.min(delta, 0.1), speed, player.grounded, player.velocity.y)
   })
 
-  return <group ref={groupRef} />
+  return (
+    <group ref={groupRef}>
+      {legBones && createPortal(<EquippedLegSkate {...legBones.foot.L} side="L" />, legBones.legL)}
+      {legBones && createPortal(<EquippedLegSkate {...legBones.foot.R} side="R" />, legBones.legR)}
+    </group>
+  )
 }

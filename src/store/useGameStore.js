@@ -1,8 +1,8 @@
 import { create } from 'zustand'
 import {
-  POWER_INITIAL,
-  POWER_MIN,
-  POWER_MAX,
+  SPEED_INITIAL,
+  SPEED_MIN,
+  SPEED_MAX,
   LEVEL_INITIAL,
   REBIRTH_INITIAL,
   REBIRTH_MIN,
@@ -10,12 +10,19 @@ import {
   WINS_INITIAL,
   WINS_MIN,
   WINS_MAX,
-  POWER_PER_ACTION_INITIAL,
-  levelForPower,
+  TIME_PLAYED_INITIAL,
+  TIME_PLAYED_MIN,
+  TIME_PLAYED_MAX,
+  SPEED_PER_GAIN_INITIAL,
+  WALK_SPEED_BASE,
+  MOVE_SPEED_MIN,
+  MOVE_SPEED_MAX,
+  MOVE_SPEED_PER_LEVEL,
+  levelForSpeed,
   canAcceptRebirth,
   clamp,
 } from '../data/progression.js'
-import { HEX_POWER_PAD_TIERS } from '../data/hexPowerPad.js'
+import { HEX_SPEED_PAD_TIERS } from '../data/hexPowerPad.js'
 import { AURA_TIERS, auraStrengthMultiplier } from '../data/aura.js'
 import { SHOP_ITEMS } from '../data/shop.js'
 import { AFK_TARGET_CONFIG } from '../data/afk.js'
@@ -24,41 +31,89 @@ import { AFK_TARGET_CONFIG } from '../data/afk.js'
 // persist, no immer, no subscribeWithSelector).
 
 // Recomputes every field that is a pure function of another durable field.
-// Called at the end of any action that changes power, so level never has to
+// Called at the end of any action that changes speed, so level never has to
 // be restated by hand at more than one call site.
 function derive(state) {
-  return { ...state, level: levelForPower(state.power) }
+  return { ...state, level: levelForSpeed(state.speed) }
 }
 
+// The player's own naturally-earned moveSpeed ceiling — equipped tier's base
+// + this-run's level bonus, the same formula equipHexPad/gainSpeed compute
+// moveSpeed from. setMoveSpeed clamps to this (not MOVE_SPEED_MAX) so a
+// custom value can never exceed what's actually been unlocked. Exported as a
+// selector (`useGameStore(selectMoveSpeedCap)`) so components/hud/
+// MoveSpeedBadge.jsx can show the same ceiling it's being clamped to.
+function moveSpeedCap(state) {
+  const tier = HEX_SPEED_PAD_TIERS[state.equippedHexPad]
+  return tier ? WALK_SPEED_BASE + tier.moveSpeed + state.moveSpeedLevelBonus : state.moveSpeed
+}
+export const selectMoveSpeedCap = moveSpeedCap
+
 export const useGameStore = create((set, get) => ({
-  power: POWER_INITIAL,
+  speed: SPEED_INITIAL,
   level: LEVEL_INITIAL,
   rebirth: REBIRTH_INITIAL,
   wins: WINS_INITIAL,
-  powerPerAction: POWER_PER_ACTION_INITIAL,
-  // Tier 0 has winsRequired: 0 and powerPerAction 1 — the free starter tier,
+  // Total wall-clock seconds this account has spent in the game
+  // (systems/playTime.js, stepped once per frame from GameLoop) — shown on
+  // LeaderboardSign3 (data/leaderboard.js's "Most Time" board). Persisted
+  // for a signed-in player like every other account-scoped field below;
+  // tracked locally for a guest too but never saved anywhere durable.
+  timePlayed: TIME_PLAYED_INITIAL,
+  speedPerGain: SPEED_PER_GAIN_INITIAL,
+  // Tier 0 has winsRequired: 0 and speedPerGain 1 — the free starter tier,
   // owned and equipped from the start.
   ownedHexPads: new Set([0]),
   equippedHexPad: 0,
+  // Physical walk speed (m/s), read as-is by systems/playerMovement.js.
+  // Seeded from tier 0 (WALK_SPEED_BASE + its own moveSpeed) and recomputed
+  // the same way on equip/reset — but, like speed/wins, it's also a raw
+  // persisted field: hydrate() below trusts a saved moveSpeed directly
+  // (clamped) instead of only re-deriving it from equippedHexPad.
+  moveSpeed: WALK_SPEED_BASE + HEX_SPEED_PAD_TIERS[0].moveSpeed,
+  // Permanent, per-level moveSpeed bonus (MOVE_SPEED_PER_LEVEL per level
+  // gained in gainSpeed) — kept separate from moveSpeed itself so equipHexPad
+  // can re-add it on top of a newly-equipped tier's base instead of losing it.
+  // Cleared back to 0 by acceptRebirth/resetProgress.
+  moveSpeedLevelBonus: 0,
   ownedAuras: new Set(),
   equippedAura: null,
   ownedTargets: new Set(),
 
-  // One Action's worth of Power. `multiplier` is the AFK target's "xN" tier
-  // while AFK-locked, else 1 — powerPerAction * (rebirth + 1) * multiplier *
-  // aura strength, floored to a whole number. Returns the Power actually
-  // added after the POWER_MAX clamp.
-  gainPower(multiplier = 1) {
+  // One walking Speed-gain tick's worth of Speed (systems/speedGain.js —
+  // every WALK_GAIN_INTERVAL seconds of continuous walking). `multiplier` is
+  // the AFK target's "xN" tier while AFK-locked, else 1 — speedPerGain *
+  // (rebirth + 1) * multiplier * aura strength, floored to a whole number.
+  // Returns the Speed actually added after the SPEED_MAX clamp.
+  gainSpeed(multiplier = 1) {
     let applied = 0
     set((state) => {
       const mult = multiplier > 0 ? multiplier : 1
       const auraMult = auraStrengthMultiplier(state.equippedAura)
-      const gain = Math.floor(state.powerPerAction * (state.rebirth + 1) * mult * auraMult)
-      const power = clamp(state.power + gain, POWER_MIN, POWER_MAX)
-      applied = power - state.power
-      return derive({ ...state, power })
+      const gain = Math.floor(state.speedPerGain * (state.rebirth + 1) * mult * auraMult)
+      const speed = clamp(state.speed + gain, SPEED_MIN, SPEED_MAX)
+      applied = speed - state.speed
+      const next = derive({ ...state, speed })
+      const levelsGained = next.level - state.level
+      if (levelsGained <= 0) return next
+      const bonus = levelsGained * MOVE_SPEED_PER_LEVEL
+      return {
+        ...next,
+        moveSpeedLevelBonus: clamp(state.moveSpeedLevelBonus + bonus, 0, MOVE_SPEED_MAX),
+        moveSpeed: clamp(state.moveSpeed + bonus, MOVE_SPEED_MIN, MOVE_SPEED_MAX),
+      }
     })
     return applied
+  },
+
+  // Called every frame from systems/playTime.js with the frame's dt. Not
+  // gated on movement/activity like gainSpeed — any unpaused frame counts,
+  // matching what a player would actually call "time played" (systems/
+  // timeScale.js's tick() already returns 0 while paused/backgrounded, so
+  // this never over-counts).
+  addPlayTime(dt) {
+    if (!(dt > 0)) return
+    set((s) => ({ timePlayed: clamp(s.timePlayed + dt, TIME_PLAYED_MIN, TIME_PLAYED_MAX) }))
   },
 
   // Manual, gated by canAcceptRebirth. Re-checks eligibility itself so a
@@ -66,13 +121,17 @@ export const useGameStore = create((set, get) => ({
   acceptRebirth() {
     const state = get()
     if (!canAcceptRebirth(state.level, state.rebirth)) return
-    set((s) =>
-      derive({
+    set((s) => {
+      const tier = HEX_SPEED_PAD_TIERS[s.equippedHexPad]
+      const moveSpeed = tier ? WALK_SPEED_BASE + tier.moveSpeed : s.moveSpeed
+      return derive({
         ...s,
         rebirth: clamp(s.rebirth + 1, REBIRTH_MIN, REBIRTH_MAX),
-        power: POWER_INITIAL,
-      }),
-    )
+        speed: SPEED_INITIAL,
+        moveSpeedLevelBonus: 0,
+        moveSpeed,
+      })
+    })
   },
 
   // Called the frame the player first steps onto a win panel — not wired to
@@ -88,7 +147,7 @@ export const useGameStore = create((set, get) => ({
   buyHexPad(index) {
     const state = get()
     if (state.ownedHexPads.has(index)) return
-    const tier = HEX_POWER_PAD_TIERS[index]
+    const tier = HEX_SPEED_PAD_TIERS[index]
     if (!tier || state.wins < tier.winsRequired) return
     set((s) => ({ wins: s.wins - tier.winsRequired, ownedHexPads: new Set(s.ownedHexPads).add(index) }))
   },
@@ -96,9 +155,24 @@ export const useGameStore = create((set, get) => ({
   equipHexPad(index) {
     const state = get()
     if (!state.ownedHexPads.has(index)) return
-    const tier = HEX_POWER_PAD_TIERS[index]
+    const tier = HEX_SPEED_PAD_TIERS[index]
     if (!tier) return
-    set({ equippedHexPad: index, powerPerAction: tier.powerPerAction })
+    set((s) => ({
+      equippedHexPad: index,
+      speedPerGain: tier.speedPerGain,
+      moveSpeed: clamp(WALK_SPEED_BASE + tier.moveSpeed + s.moveSpeedLevelBonus, MOVE_SPEED_MIN, MOVE_SPEED_MAX),
+    }))
+  },
+
+  // Called from components/hud/MoveSpeedBadge.jsx once the player types a
+  // custom value into the clicked HUD readout. Clamped to the player's own
+  // naturally-earned ceiling (equipped tier's base + this-run's level bonus —
+  // the same formula equipHexPad/gainSpeed compute moveSpeed from) rather
+  // than MOVE_SPEED_MAX, so this can only ever lower/restore movement speed
+  // within what's actually been unlocked, never grant more.
+  setMoveSpeed(value) {
+    if (!Number.isFinite(value)) return
+    set((s) => ({ moveSpeed: clamp(value, MOVE_SPEED_MIN, moveSpeedCap(s)) }))
   },
 
   // Called from components/hud/Hud.jsx's AuraEntry wins button. Buying
@@ -149,6 +223,19 @@ export const useGameStore = create((set, get) => ({
     set((s) => ({ wins: s.wins - item.winsRequired }))
   },
 
+  // Called from components/hud/TeleportPanel.jsx's "Pay with Wins" button.
+  // Unlike buyAuraTier/buyHexPad/buyTarget, a stage teleport has no
+  // owned-set — every teleport is paid for again (data/stages.js's
+  // winsCost) — so this is just a generic affordability-gated deduction.
+  // Returns whether the charge went through, since the caller (teleport)
+  // must not fire on a rejected payment.
+  spendWins(amount) {
+    const state = get()
+    if (!(amount > 0) || state.wins < amount) return false
+    set((s) => ({ wins: s.wins - amount }))
+    return true
+  },
+
   // Puts every account-scoped field back to the exact defaults a brand-new
   // guest starts with. Called when a signed-in player logs back out to a
   // guest session, once real save/load lands.
@@ -156,12 +243,15 @@ export const useGameStore = create((set, get) => ({
     set((s) =>
       derive({
         ...s,
-        power: POWER_INITIAL,
+        speed: SPEED_INITIAL,
         rebirth: REBIRTH_INITIAL,
         wins: WINS_INITIAL,
-        powerPerAction: POWER_PER_ACTION_INITIAL,
+        timePlayed: TIME_PLAYED_INITIAL,
+        speedPerGain: SPEED_PER_GAIN_INITIAL,
         ownedHexPads: new Set([0]),
         equippedHexPad: 0,
+        moveSpeed: WALK_SPEED_BASE + HEX_SPEED_PAD_TIERS[0].moveSpeed,
+        moveSpeedLevelBonus: 0,
         ownedAuras: new Set(),
         equippedAura: null,
         ownedTargets: new Set(),
@@ -175,9 +265,10 @@ export const useGameStore = create((set, get) => ({
   hydrate(saved) {
     if (!saved || typeof saved !== 'object') return
     set((s) => {
-      const power = clamp(Number(saved.power) || 0, POWER_MIN, POWER_MAX)
+      const speed = clamp(Number(saved.speed) || 0, SPEED_MIN, SPEED_MAX)
       const rebirth = clamp(Number(saved.rebirth) || 0, REBIRTH_MIN, REBIRTH_MAX)
       const wins = clamp(Number(saved.wins) || 0, WINS_MIN, WINS_MAX)
+      const timePlayed = clamp(Number(saved.timePlayed) || 0, TIME_PLAYED_MIN, TIME_PLAYED_MAX)
       const ownedHexPads = new Set(
         Array.isArray(saved.ownedHexPads) && saved.ownedHexPads.length ? saved.ownedHexPads : [0],
       )
@@ -185,15 +276,21 @@ export const useGameStore = create((set, get) => ({
       const ownedAuras = new Set(Array.isArray(saved.ownedAuras) ? saved.ownedAuras : [])
       const equippedAura = ownedAuras.has(saved.equippedAura) ? saved.equippedAura : null
       const ownedTargets = new Set(Array.isArray(saved.ownedTargets) ? saved.ownedTargets : [])
-      const tier = HEX_POWER_PAD_TIERS[equippedHexPad]
+      const tier = HEX_SPEED_PAD_TIERS[equippedHexPad]
+      const moveSpeedLevelBonus = clamp(Number(saved.moveSpeedLevelBonus) || 0, 0, MOVE_SPEED_MAX)
+      const fallbackMoveSpeed = tier ? WALK_SPEED_BASE + tier.moveSpeed + moveSpeedLevelBonus : s.moveSpeed
+      const moveSpeed = clamp(Number(saved.moveSpeed) || fallbackMoveSpeed, MOVE_SPEED_MIN, MOVE_SPEED_MAX)
       return derive({
         ...s,
-        power,
+        speed,
         rebirth,
         wins,
+        timePlayed,
         ownedHexPads,
         equippedHexPad,
-        powerPerAction: tier ? tier.powerPerAction : s.powerPerAction,
+        speedPerGain: tier ? tier.speedPerGain : s.speedPerGain,
+        moveSpeedLevelBonus,
+        moveSpeed,
         ownedAuras,
         equippedAura,
         ownedTargets,

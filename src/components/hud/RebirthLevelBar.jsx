@@ -21,7 +21,7 @@ const TEXT_OUTLINE =
   `0 4px 8px rgba(0,0,0,0.45)`
 
 // Visual twin of LevelBar.jsx's track, but plots progress toward the *next
-// rebirth* — level against rebirthRequirement(rebirth) — instead of Power
+// rebirth* — level against rebirthRequirement(rebirth) — instead of Speed
 // toward the next character level. Used only inside the Rebirth modal, so
 // it renders straight off a selector rather than LevelBar's per-frame
 // ref-write pattern.

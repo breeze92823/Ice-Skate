@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { afkState } from '../../systems/afk.js'
-import { hexPowerPadState } from '../../systems/hexPowerPad.js'
+import { hexSpeedPadState } from '../../systems/hexPowerPad.js'
 import { merchantState } from '../../systems/merchant.js'
 import { interactHoldState } from '../../systems/interactHold.js'
 import { settings } from '../../systems/settingsState.js'
@@ -23,6 +23,7 @@ import AuthPanel from './AuthPanel.jsx'
 import IdentityChip from './IdentityChip.jsx'
 import ActionResult from './ActionResult.jsx'
 import TeleportPanel from './TeleportPanel.jsx'
+import MoveSpeedBadge from './MoveSpeedBadge.jsx'
 import { actionResultState, showActionResult } from '../../systems/actionResult.js'
 import { useSettings, useTouchMode } from './hooks.js'
 
@@ -84,7 +85,7 @@ function HudModal({ title, onClose, isTouch, children }) {
   )
 }
 
-// Opened by the Rebirth button. Confirms the trade of current Power for a
+// Opened by the Rebirth button. Confirms the trade of current Speed for a
 // rebirth point rather than firing it on a single click.
 function RebirthWindow({ rebirth, canRebirth, onConfirm, onClose, isTouch }) {
   const requirement = rebirthRequirement(rebirth)
@@ -273,6 +274,10 @@ function BuxIcon({ className }) {
 // entirely for now on top of that.
 const BUX_BUY_ENABLED = false
 
+// Temporary kill switch for the Shop button in LeftCenterControls below.
+// ShopWindow/shopWindow stay wired — flip back to true to bring it back.
+const SHOP_BUTTON_ENABLED = false
+
 // One SKU in the Shop popup's card row.
 function ShopItemCard({ item, isTouch }) {
   const wins = useGameStore((s) => s.wins)
@@ -356,8 +361,8 @@ function ShopWindow({ onClose, isTouch }) {
   )
 }
 
-// Popup for the HUD's Aura button. Body is AURA_TIERS' entries in a
-// fixed-height list so it's always mouse-wheel scrollable regardless of
+// Popup opened by pressing E at the merchant. Body is AURA_TIERS' entries in
+// a fixed-height list so it's always mouse-wheel scrollable regardless of
 // viewport height.
 function AuraWindow({ onClose, isTouch }) {
   return (
@@ -500,30 +505,20 @@ function LeftCenterControls() {
             {formatCompact(wins)}
           </span>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            playButtonClick()
-            setShowAuraWindow(true)
-          }}
-          title="Open Aura"
-          className="pointer-events-auto flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded-lg border border-amber-400/40 bg-amber-600/80 text-slate-100 shadow-lg transition hover:bg-amber-500"
-        >
-          <img src="/ui/aura.png" alt="" className="h-5 w-5" draggable={false} />
-          <span className="text-[7px] font-semibold leading-none tracking-wide">Aura</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            playButtonClick()
-            setShowShopWindow(true)
-          }}
-          title="Open Shop"
-          className="pointer-events-auto flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded-lg border border-amber-400/40 bg-amber-600/80 text-slate-100 shadow-lg transition hover:bg-amber-500"
-        >
-          <img src="/ui/shop.png" alt="" className="h-5 w-5" draggable={false} />
-          <span className="text-[7px] font-semibold leading-none tracking-wide">Shop</span>
-        </button>
+        {SHOP_BUTTON_ENABLED && (
+          <button
+            type="button"
+            onClick={() => {
+              playButtonClick()
+              setShowShopWindow(true)
+            }}
+            title="Open Shop"
+            className="pointer-events-auto flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded-lg border border-amber-400/40 bg-amber-600/80 text-slate-100 shadow-lg transition hover:bg-amber-500"
+          >
+            <img src="/ui/shop.png" alt="" className="h-5 w-5" draggable={false} />
+            <span className="text-[7px] font-semibold leading-none tracking-wide">Shop</span>
+          </button>
+        )}
         <button
           type="button"
           onClick={() => {
@@ -565,32 +560,20 @@ function LeftCenterControls() {
       </div>
       <div className="flex flex-col items-center gap-2">
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              playButtonClick()
-              setShowAuraWindow(true)
-            }}
-            title="Open Aura"
-            className="pointer-events-auto flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-lg border border-amber-400/40 bg-amber-600/80 px-3 py-2 text-slate-100 shadow-lg transition hover:bg-amber-500"
-          >
-            <img src="/ui/aura.png" alt="" className="h-10 w-10" draggable={false} />
-            <span className="text-xs font-semibold tracking-wide">Aura</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              playButtonClick()
-              setShowShopWindow(true)
-            }}
-            title="Open Shop"
-            className="pointer-events-auto flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-lg border border-amber-400/40 bg-amber-600/80 px-3 py-2 text-slate-100 shadow-lg transition hover:bg-amber-500"
-          >
-            <img src="/ui/shop.png" alt="" className="h-10 w-10" draggable={false} />
-            <span className="text-xs font-semibold tracking-wide">Shop</span>
-          </button>
-        </div>
-        <div className="flex items-center gap-2">
+          {SHOP_BUTTON_ENABLED && (
+            <button
+              type="button"
+              onClick={() => {
+                playButtonClick()
+                setShowShopWindow(true)
+              }}
+              title="Open Shop"
+              className="pointer-events-auto flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-lg border border-amber-400/40 bg-amber-600/80 px-3 py-2 text-slate-100 shadow-lg transition hover:bg-amber-500"
+            >
+              <img src="/ui/shop.png" alt="" className="h-10 w-10" draggable={false} />
+              <span className="text-xs font-semibold tracking-wide">Shop</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {
@@ -760,16 +743,16 @@ export default function Hud() {
     const id = setInterval(() => {
       const prompt = hexPadPromptRef.current
       if (!prompt) return
-      const index = hexPowerPadState.nearIndex
+      const index = hexSpeedPadState.nearIndex
       if (index === null || afkState.active || afkState.nearTargetId) {
         prompt.setText(null)
         return
       }
       const { ownedHexPads, equippedHexPad } = useGameStore.getState()
       if (ownedHexPads.has(index)) {
-        prompt.setText(equippedHexPad === index ? null : 'Press E to Equip Laser')
+        prompt.setText(equippedHexPad === index ? null : 'Press E to Equip Skate')
       } else {
-        prompt.setText('Press E to Buy Laser')
+        prompt.setText('Press E to Buy Skate')
       }
       prompt.setHoldProgress(interactHoldState.progress)
     }, 100)
@@ -780,7 +763,7 @@ export default function Hud() {
     const id = setInterval(() => {
       const prompt = merchantPromptRef.current
       if (!prompt) return
-      const visible = merchantState.near && !afkState.active && !afkState.nearTargetId && hexPowerPadState.nearIndex === null
+      const visible = merchantState.near && !afkState.active && !afkState.nearTargetId && hexSpeedPadState.nearIndex === null
       prompt.setText(visible ? 'Press E to Aura' : null)
       prompt.setHoldProgress(interactHoldState.progress)
     }, 100)
@@ -813,6 +796,10 @@ export default function Hud() {
 
       <LeftCenterControls />
 
+      {/* Right-edge, vertically centred readout of the player's current
+         physical walk speed (store's moveSpeed). */}
+      <MoveSpeedBadge />
+
       {/* Stage picker — appears while near TeleportGate.jsx's portal. */}
       <TeleportPanel />
 
@@ -836,7 +823,7 @@ export default function Hud() {
       {/* Top-centre multiplayer status pill. */}
       <NetStatus />
 
-      {/* Per-Action "+N" power badges around the player. Owns its own rAF
+      {/* Per-gain "+N" speed badges around the player. Owns its own rAF
          loop and never re-renders. */}
       <ActionPopups />
 

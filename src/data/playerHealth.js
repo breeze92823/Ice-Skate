@@ -8,7 +8,7 @@ export const PLAYER_MAX_HP = 100
 // player at data/hub.js's SPAWN.
 export const RESPAWN_DELAY_MS = 2000
 
-// HUD health bar, just above the "N Power" caption (components/hud/
+// HUD health bar, just above the "N Speed" caption (components/hud/
 // LevelBar.jsx). Shown only while the local player is in the PVP zone.
 export const HUD_HEALTH_BAR = {
   WIDTH: 130,

@@ -7,7 +7,6 @@ import { shade } from './studTexture.js'
 
 export function makeRoadTexture({
   width,
-  length,
   cell,
   color,
   colorDark,
@@ -72,7 +71,11 @@ export function makeRoadTexture({
   const tex = new THREE.CanvasTexture(canvas)
   tex.wrapS = THREE.RepeatWrapping
   tex.wrapT = THREE.RepeatWrapping
-  tex.repeat.set(1, length / (cell * 2))
+  // U stays 0..1 across the ribbon's width (Road.jsx normalizes it there so
+  // the baked kerb strips always land on the two edges regardless of a
+  // waypoint's width override); V is set in world metres by Road.jsx, so
+  // repeat here just fixes how many world metres one canvas-height covers.
+  tex.repeat.set(1, 1 / (cell * 2))
   tex.colorSpace = THREE.SRGBColorSpace
   tex.anisotropy = 4
   return tex

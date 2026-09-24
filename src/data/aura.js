@@ -20,7 +20,7 @@ export const AURA_TIERS = [
   { name: 'Transcendent Aura', strengthMult: 5, winsRequired: 100000000, gemCost: 400, iconUrl: '/ui/aura/aura-13.png' },
 ]
 
-// store/useGameStore.js's gainPower() factor for the currently equipped
+// store/useGameStore.js's gainSpeed() factor for the currently equipped
 // aura. `equippedAura` is an index into AURA_TIERS, or null (1x, no-op).
 export function auraStrengthMultiplier(equippedAura) {
   const tier = AURA_TIERS[equippedAura]

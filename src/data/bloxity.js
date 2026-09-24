@@ -25,6 +25,16 @@ export const RIG = {
   neckOffsetY: 0.6, // Neck_Offset.y
 }
 
+// Manual mount offset for the whole avatar rig (built.root), relative to
+// Player.jsx's own group — which sits at the capsule's feet/origin in world
+// space. player.glb's stated origin is already the feet (see RIG_HEIGHT
+// above), so this defaults to zero; only nudge it if a specific rig build
+// needs the whole body shifted to align against the capsule/collider or
+// ground. Applied in avatarModel.js's applyProportions(), in *metres*
+// (world/Player space, after built.root's own scale) — not rig-authored
+// units, unlike RIG's offsets above.
+export const RIG_MOUNT_OFFSET = { x: 0, y: 0.13, z: 0 }
+
 // getProportions() ranges, straight from the SDK spec. Values arrive from a
 // remote portal, so everything is clamped before it reaches the scene graph.
 export const PROPORTIONS = {
@@ -109,7 +119,12 @@ export const GAIT = {
 
   airborneLegL: -0.55,
   airborneLegR: 0.3,
-  airborneArm: -2.1,
+  // Arms blend continuously between these two off player.velocity.y instead
+  // of holding one fixed pose, so they read up while rising and drop while
+  // falling, crossing smoothly through 0 at the jump's apex.
+  airborneArmUp: -2.6, // arm angle at/above +airborneArmVelRef vertical speed (rising)
+  airborneArmDown: -1.2, // arm angle at/below -airborneArmVelRef vertical speed (falling)
+  airborneArmVelRef: 6, // m/s of vertical speed at which the up/down blend saturates
   airborneLean: -0.1,
 
   turnRate: 0.001, // base of 1 - turnRate^delta; smaller = snappier turn

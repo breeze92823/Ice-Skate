@@ -1,10 +1,12 @@
 // HUD level-bar tunables. The bar sits bottom-centre of the screen: a
-// "<Power> Power" caption, a rounded track that fills yellow -> orange -> red
-// as Power climbs toward the next level, "Level N" and "<into> / <span>"
-// overlaid on it, and the public/ui/action_popup.png starburst pinned to its
-// left edge. Drawn by components/hud/LevelBar.jsx as a DOM sibling of the
-// canvas, never re-rendering per frame — its readouts are written to the DOM
-// from a throttled store subscription.
+// "<Speed> Speed" caption, a rounded track that fills yellow -> orange -> red
+// as Speed climbs toward the next level, and "Level N" / "<into> / <span>"
+// overlaid on it. Drawn by components/hud/LevelBar.jsx as a DOM sibling of
+// the canvas, never re-rendering per frame — its readouts are written to the
+// DOM from a throttled store subscription.
+//
+// LEVEL_BAR_ICON_SIZE/OVERHANG/URL are also shared by RebirthLevelBar.jsx
+// for its own badge in the Rebirth confirm modal.
 
 // Milliseconds between textContent / fill-width writes — a ~10Hz throttle
 // for numeric HUD readouts.
@@ -19,7 +21,7 @@ export const LEVEL_BAR_MAX_VW = 88
 export const LEVEL_BAR_BORDER = 6
 export const LEVEL_BAR_TEXT_STROKE = 4
 
-// Caption ("<Power> Power") and the on-bar labels ("Level N", "<into> / <span>").
+// Caption ("<Speed> Speed") and the on-bar labels ("Level N", "<into> / <span>").
 export const LEVEL_BAR_CAPTION_FONT_PX = 30
 export const LEVEL_BAR_LABEL_FONT_PX = 34
 
@@ -38,9 +40,12 @@ export const LEVEL_BAR_TRANSITION_MS = 200
 export const LEVEL_BAR_FILL_GRADIENT =
   'linear-gradient(180deg, #ffe24d 0%, #ff9d00 52%, #ff2d00 100%)'
 
-// Semi-transparent band behind the "<Power> Power" caption.
+// Semi-transparent band behind the "<Speed> Speed" caption.
 export const LEVEL_BAR_CAPTION_BAND =
   'linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0) 100%)'
+
+// Text color for the "Rebirth (Xn)" readout above the bar.
+export const LEVEL_BAR_REBIRTH_TEXT_COLOR = '#ff5fc4'
 
 export const LEVEL_BAR_CAPTION_BAND_PAD_X = 52
 export const LEVEL_BAR_CAPTION_BAND_PAD_Y = 4

@@ -1,12 +1,10 @@
-// Power-gain popups (a framework-free, mutable singleton pool, stepped once
-// per frame from GameLoop). Nothing in this project calls
-// spawnActionPopup() yet — there is no combat/AFK loop that grants Power —
-// so the pool just sits idle; step() still runs so it's ready the day
-// something does. components/hud/ActionPopups.jsx reads the pool each
-// frame and draws it.
+// Speed-gain popups (a framework-free, mutable singleton pool, stepped once
+// per frame from GameLoop). Spawned by systems/speedGain.js's walking-tick
+// gain, and step() still runs even before that fires so the pool is ready.
+// components/hud/ActionPopups.jsx reads the pool each frame and draws it.
 import * as THREE from 'three'
 import { player } from './playerState.js'
-import { playPowerGainPop } from './sfx.js'
+import { playSpeedGainPop } from './sfx.js'
 import {
   ACTION_POPUP_POOL_SIZE,
   ACTION_POPUP_LIFETIME,
@@ -35,7 +33,7 @@ const anchor = new THREE.Vector3()
 
 export function spawnActionPopup(amount) {
   if (!(amount > 0)) return
-  playPowerGainPop()
+  playSpeedGainPop()
   const slot = actionPopupPool[nextSlot]
   nextSlot = (nextSlot + 1) % ACTION_POPUP_POOL_SIZE
   spawnSeq += 1

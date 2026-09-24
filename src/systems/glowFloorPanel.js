@@ -3,11 +3,13 @@
 // so stepping onto the panel just banks its Wins once (same singleton-state,
 // stepped-once-per-frame-from-GameLoop style as afk.js/hexPowerPad.js). The
 // award re-arms only after the player leaves the zone.
-import { player } from './playerState.js'
+import { player, resetPlayer } from './playerState.js'
 import { useGameStore } from '../store/useGameStore.js'
-import { playPowerGainPop } from './sfx.js'
+import { playSpeedGainPop } from './sfx.js'
 import { showActionResult } from './actionResult.js'
 import { formatShort } from '../data/format.js'
+import { SPAWN } from '../data/hub.js'
+import { syncYawToPlayer } from './cameraOrbit.js'
 import {
   GLOW_FLOOR_PANEL_POSITIONS,
   GLOW_FLOOR_PANEL_WINS,
@@ -46,9 +48,14 @@ export function step() {
     const amount = GLOW_FLOOR_PANEL_WINS[index] ?? 0
     if (amount > 0) {
       useGameStore.getState().awardWins(amount)
-      playPowerGainPop()
+      playSpeedGainPop()
       showActionResult(`+${formatShort(amount)} Wins`, true)
     }
+    // Touching the panel sends the player back to the hub spawn — a
+    // checkpoint/finish trigger, not a hazard, so this is an instant
+    // teleport: no HP loss, no death flash, no respawn delay.
+    resetPlayer(SPAWN)
+    syncYawToPlayer()
   }
 
   glowFloorPanelState.onIndex = index

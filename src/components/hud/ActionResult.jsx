@@ -1,5 +1,5 @@
 // Top-center popup that surfaces the result of a held-E interaction attempt
-// — success (green) for a completed AFK lock-on / HexPower buy-equip,
+// — success (green) for a completed AFK lock-on / HexSpeed buy-equip,
 // failure (red) for one blocked by a gate the HUD prompt doesn't state up
 // front. Driven imperatively via `show(text, success)`, polled from
 // systems/actionResult.js's showActionResult() singleton at Hud.jsx's usual

@@ -15,15 +15,13 @@ import {
   LEVEL_BAR_TEXT_STROKE,
   LEVEL_BAR_CAPTION_FONT_PX,
   LEVEL_BAR_LABEL_FONT_PX,
-  LEVEL_BAR_ICON_SIZE,
-  LEVEL_BAR_ICON_OVERHANG,
   LEVEL_BAR_BOTTOM,
   LEVEL_BAR_TRANSITION_MS,
   LEVEL_BAR_FILL_GRADIENT,
   LEVEL_BAR_CAPTION_BAND,
   LEVEL_BAR_CAPTION_BAND_PAD_X,
   LEVEL_BAR_CAPTION_BAND_PAD_Y,
-  LEVEL_BAR_ICON_URL,
+  LEVEL_BAR_REBIRTH_TEXT_COLOR,
 } from '../../data/levelBar.js'
 
 // Solid cartoon outline for the overlaid text — an 8-direction black shadow
@@ -42,6 +40,7 @@ const LABEL_FONT = `800 ${LEVEL_BAR_LABEL_FONT_PX}px/1 ui-rounded, 'Nunito', sys
 // outside React.
 export default function LevelBar() {
   const rebirthRef = useRef(null)
+  const rebirthCountRef = useRef(null)
   const captionRef = useRef(null)
   const levelRef = useRef(null)
   const countRef = useRef(null)
@@ -55,11 +54,12 @@ export default function LevelBar() {
 
     const paint = () => {
       last = performance.now()
-      const { power, rebirth } = useGameStore.getState()
-      const { level, frac, total, needed } = levelProgress(power)
+      const { speed, rebirth } = useGameStore.getState()
+      const { level, frac, total, needed } = levelProgress(speed)
       if (rebirthRef.current)
         rebirthRef.current.style.display = canAcceptRebirth(level, rebirth) ? 'inline-block' : 'none'
-      if (captionRef.current) captionRef.current.textContent = `${formatShort(power)} Power`
+      if (rebirthCountRef.current) rebirthCountRef.current.textContent = `Rebirth (X${rebirth})`
+      if (captionRef.current) captionRef.current.textContent = `${formatShort(speed)} Speed`
       if (levelRef.current) levelRef.current.textContent = `Level ${level}`
       if (countRef.current) countRef.current.textContent = `${formatShort(total)} / ${formatShort(needed)}`
       if (fillRef.current) fillRef.current.style.width = `${(frac * 100).toFixed(2)}%`
@@ -102,6 +102,22 @@ export default function LevelBar() {
       className="pointer-events-none absolute left-1/2 -translate-x-1/2"
       style={{ bottom: LEVEL_BAR_BOTTOM, width: LEVEL_BAR_WIDTH, maxWidth: `${LEVEL_BAR_MAX_VW}vw` }}
     >
+      <div style={{ textAlign: 'center', marginBottom: 4, position: 'relative', left: 350, top: 50 }}>
+        <span
+          ref={rebirthCountRef}
+          style={{
+            display: 'inline-block',
+            padding: `${LEVEL_BAR_CAPTION_BAND_PAD_Y}px ${LEVEL_BAR_CAPTION_BAND_PAD_X}px`,
+            font: `800 ${LEVEL_BAR_CAPTION_FONT_PX * 0.6}px/1 ui-rounded, 'Nunito', system-ui, sans-serif`,
+            letterSpacing: 0.5,
+            color: LEVEL_BAR_REBIRTH_TEXT_COLOR,
+            textShadow: TEXT_OUTLINE,
+          }}
+        >
+          Rebirth (X0)
+        </span>
+      </div>
+
       <div style={{ textAlign: 'center', marginBottom: 6 }}>
         <span
           ref={rebirthRef}
@@ -159,7 +175,7 @@ export default function LevelBar() {
             background: LEVEL_BAR_CAPTION_BAND,
           }}
         >
-          1 Power
+          1 Speed
         </span>
       </div>
 
@@ -194,7 +210,7 @@ export default function LevelBar() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: `0 28px 0 ${Math.round(LEVEL_BAR_ICON_SIZE * 0.5)}px`,
+              padding: '0 28px',
             }}
           >
             <span ref={levelRef} style={{ font: LABEL_FONT, color: '#fff', textShadow: TEXT_OUTLINE }}>
@@ -205,21 +221,6 @@ export default function LevelBar() {
             </span>
           </div>
         </div>
-
-        <img
-          src={LEVEL_BAR_ICON_URL}
-          alt=""
-          draggable={false}
-          style={{
-            position: 'absolute',
-            left: -LEVEL_BAR_ICON_SIZE * LEVEL_BAR_ICON_OVERHANG,
-            top: '50%',
-            width: LEVEL_BAR_ICON_SIZE,
-            height: LEVEL_BAR_ICON_SIZE,
-            transform: 'translateY(-50%)',
-            filter: 'drop-shadow(0 4px 5px rgba(0,0,0,0.4))',
-          }}
-        />
       </div>
     </div>
   )

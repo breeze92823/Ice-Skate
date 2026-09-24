@@ -24,7 +24,26 @@ const LIGHT = '#525a68'
 // island (geometry, roughness/metalness, shadow settings), while still
 // being able to use its own checker colors. `light`/`dark` default to
 // Ground's own tones below, so Ground() itself is untouched.
-export function GroundBlock({ width, depth, thickness, position, rotation = [0, 0, 0], light = LIGHT, dark = DARK }) {
+//
+// `transparent`/`objectRef`/`materialsRef` are only used by GroundBlocks.jsx's
+// PhasingGroundBlock (Ground.026's solid/fade/hidden loop, see
+// systems/groundPhase.js) to reach into the rendered object/materials and
+// mutate opacity/visibility every frame — every other call site (Ground()
+// itself, every non-phasing GroundBlocks entry) leaves them unset and gets
+// the exact same static block as before.
+export function GroundBlock({
+  width,
+  depth,
+  thickness,
+  position,
+  rotation = [0, 0, 0],
+  light = LIGHT,
+  dark = DARK,
+  pbr = MATERIAL_PBR.GROUND,
+  transparent = false,
+  objectRef,
+  materialsRef,
+}) {
   const { scene } = useGLTF('/models/ground.glb')
 
   const topTexture = useMemo(
@@ -51,12 +70,12 @@ export function GroundBlock({ width, depth, thickness, position, rotation = [0, 
   )
 
   const topMaterial = useMemo(
-    () => new MeshStandardMaterial({ map: topTexture, ...MATERIAL_PBR.GROUND }),
-    [topTexture]
+    () => new MeshStandardMaterial({ map: topTexture, transparent, ...pbr }),
+    [topTexture, transparent, pbr]
   )
   const sideMaterial = useMemo(
-    () => new MeshStandardMaterial({ map: sideTexture, ...MATERIAL_PBR.GROUND }),
-    [sideTexture]
+    () => new MeshStandardMaterial({ map: sideTexture, transparent, ...pbr }),
+    [sideTexture, transparent, pbr]
   )
 
   const block = useMemo(() => {
@@ -82,7 +101,19 @@ export function GroundBlock({ width, depth, thickness, position, rotation = [0, 
     [topTexture, sideTexture, topMaterial, sideMaterial]
   )
 
-  return <primitive object={block} scale={[width, thickness, depth]} position={position} rotation={rotation} />
+  useEffect(() => {
+    if (materialsRef) materialsRef.current = { top: topMaterial, side: sideMaterial }
+  }, [materialsRef, topMaterial, sideMaterial])
+
+  return (
+    <primitive
+      ref={objectRef}
+      object={block}
+      scale={[width, thickness, depth]}
+      position={position}
+      rotation={rotation}
+    />
+  )
 }
 
 export default function Ground() {

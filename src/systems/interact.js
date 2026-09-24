@@ -8,10 +8,10 @@
 // end-of-frame reset.
 import { isInteractKeyDown } from './input.js'
 import { afkState, startAfk } from './afk.js'
-import { hexPowerPadState, interactWithNearestPad } from './hexPowerPad.js'
+import { hexSpeedPadState, interactWithNearestPad } from './hexPowerPad.js'
 import { merchantState } from './merchant.js'
 import { step as stepHold } from './interactHold.js'
-import { playPowerGainPop } from './sfx.js'
+import { playSpeedGainPop } from './sfx.js'
 import { showActionResult } from './actionResult.js'
 
 export function step() {
@@ -22,7 +22,7 @@ export function step() {
 
   let zoneKey = null
   if (afkState.nearTargetId !== null) zoneKey = `afk:${afkState.nearTargetId}`
-  else if (hexPowerPadState.nearIndex !== null) zoneKey = `hexPad:${hexPowerPadState.nearIndex}`
+  else if (hexSpeedPadState.nearIndex !== null) zoneKey = `hexPad:${hexSpeedPadState.nearIndex}`
   else if (merchantState.near) zoneKey = 'merchant'
 
   const confirmed = stepHold(zoneKey, isInteractKeyDown())
@@ -33,7 +33,7 @@ export function step() {
       startAfk(afkState.nearTargetId)
     } else if (afkState.nearNeedsPurchase) {
       afkState.purchaseRequestedId = afkState.nearTargetId
-      playPowerGainPop()
+      playSpeedGainPop()
     } else {
       showActionResult(`Rebirth ${afkState.nearRebirthRequired} required`, false)
     }
@@ -41,6 +41,6 @@ export function step() {
     interactWithNearestPad()
   } else if (zoneKey === 'merchant') {
     merchantState.openAuraRequested = true
-    playPowerGainPop()
+    playSpeedGainPop()
   }
 }

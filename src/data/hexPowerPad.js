@@ -1,31 +1,29 @@
-// Hex power pad tiers. This project has no in-world pads yet
-// (HEX_POWER_PAD_POSITIONS is empty), so systems/hexPowerPad.js's proximity
-// scan never finds one and the buy/equip prompt never shows — the store's
-// ownedHexPads/equippedHexPad state and buyHexPad/equipHexPad actions stay
-// wired for when pads are placed in the world.
-export const HEX_POWER_PAD_POSITIONS = []
+// Hex speed pad tiers — backing data for the SkateRack's buy/equip economy.
+// Positions/tiers are derived 1:1 from data/skateRack.js's SKATE_RACK_TIERS
+// (same index into both arrays and into ownedHexPads/equippedHexPad) so the
+// rack's displayed progression and its real buy/equip state can never drift
+// apart into two copies of the same numbers.
+import { SKATE_RACK_TIERS, skateRackPadWorldPosition } from './skateRack.js'
 
 // Metres from a pad's placement position within which the buy/equip prompt
 // appears and E is allowed to act on it.
-export const HEX_POWER_PAD_RANGE = 2.5
+export const HEX_SPEED_PAD_RANGE = 2.5
 
-// Laser tier unlocked by each pad. `powerPerAction` becomes the player's
-// powerPerAction on equip (store/useGameStore.js equipHexPad);
-// `winsRequired` gates buyHexPad.
-export const HEX_POWER_PAD_TIERS = [
-  { powerPerAction: 1, winsRequired: 0, beamColor: '#4fd6ff' },
-  { powerPerAction: 2, winsRequired: 1, beamColor: '#38bdf8' },
-  { powerPerAction: 5, winsRequired: 5, beamColor: '#22d3ee' },
-  { powerPerAction: 10, winsRequired: 25, beamColor: '#34d399' },
-  { powerPerAction: 25, winsRequired: 100, beamColor: '#a3e635' },
-  { powerPerAction: 50, winsRequired: 250, beamColor: '#facc15' },
-  { powerPerAction: 100, winsRequired: 750, beamColor: '#fb923c' },
-  { powerPerAction: 150, winsRequired: 2500, beamColor: '#f97316' },
-  { powerPerAction: 250, winsRequired: 7500, beamColor: '#f43f5e' },
-  { powerPerAction: 400, winsRequired: 25000, beamColor: '#ec4899' },
-  { powerPerAction: 700, winsRequired: 50000, beamColor: '#d946ef' },
-  { powerPerAction: 1000, winsRequired: 100000, beamColor: '#a855f7' },
-  { powerPerAction: 1500, winsRequired: 250000, beamColor: '#8b5cf6' },
-  { powerPerAction: 2500, winsRequired: 750000, beamColor: '#6366f1' },
-  { powerPerAction: 3500, winsRequired: 2500000, beamColor: '#ff2b2b' },
-]
+export const HEX_SPEED_PAD_POSITIONS = SKATE_RACK_TIERS.map((tier) => skateRackPadWorldPosition(tier.row, tier.col))
+
+// Tier unlocked by each pad. `speedPerGain` becomes the player's
+// speedPerGain on equip (store/useGameStore.js equipHexPad); `moveSpeed`
+// becomes the player's physical walk speed on equip (same action), replacing
+// it outright rather than adding to a base — both read straight off the
+// pad's own "+N Speed" label (tier.speed), so the number displayed on the
+// rack is exactly what equipping it grants in both places; `winsRequired`
+// gates buyHexPad. WALK_SPEED_BASE (VITE_WALK_SPEED_BASE,
+// data/progression.js) is layered on top of this moveSpeed as a flat bonus
+// wherever the store assigns moveSpeed — not baked in here, so this stays
+// the exact "+N Speed" number shown on the rack.
+export const HEX_SPEED_PAD_TIERS = SKATE_RACK_TIERS.map((tier) => ({
+  speedPerGain: tier.speed,
+  moveSpeed: tier.speed,
+  winsRequired: tier.winsRequired,
+  beamColor: tier.itemColor,
+}))
