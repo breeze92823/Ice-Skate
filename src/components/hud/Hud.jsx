@@ -19,6 +19,7 @@ import LevelBar from './LevelBar.jsx'
 import RebirthLevelBar from './RebirthLevelBar.jsx'
 import LevelUpPopup from './LevelUpPopup.jsx'
 import NetStatus from './NetStatus.jsx'
+import AuthPanel from './AuthPanel.jsx'
 import IdentityChip from './IdentityChip.jsx'
 import ActionResult from './ActionResult.jsx'
 import TeleportPanel from './TeleportPanel.jsx'
@@ -805,6 +806,8 @@ export default function Hud() {
       {/* Top-left identity chip: dev-only diagnostic — renders null
          otherwise. Event-driven, never per frame. */}
       <IdentityChip panelStyle={panelStyle} />
+
+      <AuthPanel panelStyle={panelStyle} />
 
       {/* Top-centre buy/equip/lock-on result popup — green on success, red
          with the reason on failure. Driven imperatively via actionResultRef. */}
