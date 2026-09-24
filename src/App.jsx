@@ -38,6 +38,7 @@ import GiantBall from './components/GiantBall.jsx'
 import Sahur from './components/Sahur.jsx'
 import GlowFloorPanels from './components/GlowFloorPanels.jsx'
 import Hud from './components/hud/Hud.jsx'
+import LoadingScreen from './components/LoadingScreen.jsx'
 
 export default function App() {
   return (
@@ -101,6 +102,7 @@ export default function App() {
         <StageWalls />
       </Canvas>
       <Hud />
+      <LoadingScreen />
     </>
   )
 }

@@ -2,8 +2,11 @@
 //
 // Every cosmetic slot is remote and optional: any part/item/skin that 404s
 // or fails to parse falls back to the base rig's own default_* mesh. The
-// base rig itself retries with backoff rather than giving up, so a blocked
-// CDN only ever leaves the caller on the capsule temporarily.
+// base rig itself retries with backoff up to BASE_RIG_MAX_ATTEMPTS times
+// before giving up (avatarReadiness.js), so a blocked CDN only ever leaves
+// the caller on the capsule temporarily unless it's still down after 3
+// tries — at which point components/LoadingScreen.jsx surfaces a retryable
+// error instead of retrying forever.
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
@@ -20,6 +23,7 @@ import {
 } from '../data/bloxity.js'
 import { PLAYER_HEIGHT, PLAYER_RADIUS } from './playerState.js'
 import { MATERIAL_PBR } from '../data/materials.js'
+import { BASE_RIG_MAX_ATTEMPTS, setAvatarAttempt, setAvatarFailed } from './avatarReadiness.js'
 
 // The base rig is refetched on every rebuild; let three serve it from cache.
 THREE.Cache.enabled = true
@@ -29,7 +33,10 @@ const objLoader = new OBJLoader()
 const textureLoader = new THREE.TextureLoader()
 
 // A blip on the base-rig fetch must not permanently strand the player:
-// retry with growing backoff instead of giving up after one failure.
+// retry with growing backoff, but give up after BASE_RIG_MAX_ATTEMPTS
+// rather than looping forever — components/LoadingScreen.jsx (via
+// avatarReadiness.js) surfaces a retryable error past that point instead of
+// an endless spinner.
 const BASE_RIG_RETRY_BACKOFF_MS = [2_000, 5_000, 10_000, 20_000, 30_000]
 
 function wait(ms) {
@@ -38,17 +45,29 @@ function wait(ms) {
 
 // `token.cancelled` flips true when a newer rebuild supersedes this one or
 // the component unmounts (PlayerAvatar.jsx) — checked between attempts so an
-// abandoned retry loop can't outlive its caller.
+// abandoned retry loop can't outlive its caller. Returns null both when
+// cancelled and when BASE_RIG_MAX_ATTEMPTS is exhausted; avatarReadiness.js's
+// `failed` flag (set only in the latter case) is what lets callers tell the
+// two apart.
 async function loadBaseRig(token) {
   let attempt = 0
+  setAvatarAttempt(0)
+  setAvatarFailed(false)
   for (;;) {
     if (token?.cancelled) return null
     try {
-      return await gltfLoader.loadAsync(BASE_MODEL_URL)
+      const gltf = await gltfLoader.loadAsync(BASE_MODEL_URL)
+      setAvatarAttempt(0)
+      return gltf
     } catch (err) {
-      const delay = BASE_RIG_RETRY_BACKOFF_MS[Math.min(attempt, BASE_RIG_RETRY_BACKOFF_MS.length - 1)]
       attempt += 1
-      console.warn(`[bloxity] base rig load failed (attempt ${attempt}), retrying in ${delay}ms`, err)
+      console.warn(`[bloxity] base rig load failed (attempt ${attempt}/${BASE_RIG_MAX_ATTEMPTS})`, err)
+      setAvatarAttempt(attempt)
+      if (attempt >= BASE_RIG_MAX_ATTEMPTS) {
+        setAvatarFailed(true)
+        return null
+      }
+      const delay = BASE_RIG_RETRY_BACKOFF_MS[Math.min(attempt - 1, BASE_RIG_RETRY_BACKOFF_MS.length - 1)]
       await wait(delay)
     }
   }

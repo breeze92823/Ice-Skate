@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useFrame, createPortal } from '@react-three/fiber'
-import { subscribe } from '../systems/avatarState.js'
+import { avatarState, subscribe } from '../systems/avatarState.js'
 import { applyProportions, buildAvatar, disposeAvatar } from '../systems/avatarModel.js'
+import { setAvatarReady, subscribeAvatarRetry } from '../systems/avatarReadiness.js'
 import { makeGait, updateGait, disposeGait } from '../systems/avatarAnim.js'
 import { player, setDims, resetDims } from '../systems/playerState.js'
 import { anyTreadmillOccupied } from '../systems/treadmillAnim.js'
@@ -40,6 +41,7 @@ export default function PlayerAvatar({ onReady }) {
       resetDims()
       setLegBones(null)
       onReady(false)
+      setAvatarReady(false)
     }
 
     const rebuild = async (equipped, proportions) => {
@@ -68,6 +70,7 @@ export default function PlayerAvatar({ onReady }) {
       const legR = built.nodes.LegR1
       setLegBones(legL && legR ? { legL, legR, foot: built.legFoot } : null)
       onReady(true)
+      setAvatarReady(true)
     }
 
     const off = subscribe((state, reason) => {
@@ -80,10 +83,18 @@ export default function PlayerAvatar({ onReady }) {
       rebuild(state.equipped, state.proportions)
     })
 
+    // components/LoadingScreen.jsx's Retry button, once the base rig's own
+    // retry loop has already given up (avatarModel.js's
+    // BASE_RIG_MAX_ATTEMPTS) — kicks off a fresh rebuild from the current
+    // equipped/proportions rather than sitting on a backoff wait that no
+    // longer exists.
+    const offRetry = subscribeAvatarRetry(() => rebuild(avatarState.equipped, avatarState.proportions))
+
     return () => {
       disposed = true
       if (cancelToken) cancelToken.cancelled = true
       off()
+      offRetry()
       clear()
     }
   }, [onReady])

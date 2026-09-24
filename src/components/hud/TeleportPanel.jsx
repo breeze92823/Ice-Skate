@@ -92,7 +92,7 @@ export default function TeleportPanel() {
     // Aura/Shop), minus the dark full-screen backdrop and close button —
     // this panel stays non-blocking since it opens/closes on proximity
     // alone, not a click. Body is a scrollable vertical list (AuraWindow's
-    // pattern) rather than a button row/grid, so all 13 STAGES entries stay
+    // pattern) rather than a button row/grid, so all STAGES entries stay
     // reachable regardless of viewport height.
     <div className="pointer-events-auto absolute left-1/2 top-[42%] w-[min(520px,78vw)] -translate-x-1/2 -translate-y-1/2">
       <span
