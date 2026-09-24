@@ -10,7 +10,7 @@ import { TREADMILL_POSITION, TREADMILL_ROTATION_Y } from './hub.js'
 
 // Shifted from its original spot beside Treadmill1
 // (TREADMILL_POSITION[0] - 8, TREADMILL_POSITION[2]), same facing.
-export const SKATE_RACK_POSITION = [TREADMILL_POSITION[0] + 33, TREADMILL_POSITION[1], TREADMILL_POSITION[2] + 50]
+export const SKATE_RACK_POSITION = [TREADMILL_POSITION[0] + 51.213, TREADMILL_POSITION[1], TREADMILL_POSITION[2] + 50]
 // Rotated -90° (-Math.PI/2) about Y from the treadmill row's own facing.
 export const SKATE_RACK_ROTATION_Y = TREADMILL_ROTATION_Y - Math.PI / 2
 
