@@ -1,5 +1,5 @@
 import { SIDE_WALLS, SIDE_WALL_END_CAPS, SIDE_WALL_BULGES, SIDE_WALL_JOGS } from './sideWalls.js'
-import { HUB_WALLS, HUB_DOOR_FILL } from './hubWalls.js'
+import { HUB_WALLS, HUB_DOOR_FILL, HUB_WALL_BEAMS, HUB_WALL_BEAM_TOP } from './hubWalls.js'
 import { STAGE2_SEGMENTS, STAGE2_JOGS } from './stage2Walls.js'
 import { STAGE3_SEGMENTS, STAGE3_RAMP_JOGS, STAGE3_DOOR_FILLS } from './stage3Walls.js'
 import { STAGE4_SEGMENTS, STAGE4_JOGS, STAGE4_DOOR_FILLS } from './stage4Walls.js'
@@ -31,6 +31,12 @@ import { STAGE13_END_WALL_COLLIDER } from './stageWalls.js'
 // systems/playerMovement.js's resolveSideWalls for the per-shape history/
 // reasoning behind this list; unchanged here, just relocated.
 //
+// HUB_WALL_BEAMS is here too, unlike its lookalike SIDE_WALL_BEAMS (data/
+// sideWalls.js) which is deliberately left out: SIDE_WALL_BEAMS only
+// re-skins a seam that's already backed by solid wall, but HUB_WALL_BEAMS'
+// pilasters protrude into otherwise-open room space next to the doorway, so
+// they need their own AABB or the player would walk straight through them.
+//
 // STAGE13_END_WALL_COLLIDER (data/stageWalls.js) is the one exception: every
 // other StageWall.NNN glass panel (components/StageWalls.jsx) is visual-only
 // and deliberately absent from this list, but StageWall.013 is the final
@@ -39,6 +45,8 @@ import { STAGE13_END_WALL_COLLIDER } from './stageWalls.js'
 export const SIDE_WALL_COLLIDERS = [
   ...HUB_WALLS,
   HUB_DOOR_FILL,
+  ...HUB_WALL_BEAMS,
+  HUB_WALL_BEAM_TOP,
   ...SIDE_WALLS,
   ...SIDE_WALL_END_CAPS,
   ...SIDE_WALL_BULGES,
