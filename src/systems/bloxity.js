@@ -161,6 +161,11 @@ function onUser() {
     resetAvatar()
     return
   }
+  // Diagnostic for the leaderboard-duplicate/lost-progress investigation:
+  // getStableUserId() below picks the first truthy field among these three,
+  // and window.Legion.SDK ships no local type info to confirm they always
+  // agree across sessions for the same account.
+  console.debug('[bloxity] user id fields', { _id: user._id, id: user.id, userId: user.userId })
   loadAvatar()
   loadFriends(generation)
   loadBalance(generation)

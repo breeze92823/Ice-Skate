@@ -19,6 +19,10 @@ export default function AuthPanel({ panelStyle }) {
 
   const { user, balance, ready } = authState
 
+  // Logged-in players don't need this panel in-game; DEV_ONLY_LOGOUT still
+  // needs it visible to sign out and re-test the auth flow.
+  if (ready && user && !DEV_ONLY_LOGOUT) return null
+
   const onLogin = async () => {
     setBusy(true)
     try {
