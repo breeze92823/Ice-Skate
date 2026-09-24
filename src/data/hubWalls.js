@@ -118,3 +118,125 @@ export const HUB_DOOR_FILL = {
   position: [DOOR.position[0], (DOOR_TOP + ROOM_TOP) / 2, DOOR.position[2]],
   size: [DOOR.size[0] + DOOR_FILL_OVERLAP * 2, ROOM_TOP - DOOR_TOP, DOOR.size[2] + DOOR_FILL_OVERLAP * 2],
 }
+
+// Door-frame light strips — an unlit emissive trim around StageWall.001's
+// own opening, echoing Laser-Escape's podium_stage neon sign face (an unlit,
+// untone-mapped MeshBasicMaterial shape; see CLAUDE.md's "fake it with an
+// emissive-looking MeshBasicMaterial shape, not a bloom pass"). HubWall.
+// north.west/.east's own far face and the door panel's own near face are
+// already coplanar at DOOR_NEAR_FACE (NORTH_Z = DOOR_NEAR_FACE - WALL_HALF,
+// so the walls' +Z face lands exactly there) — the strips sit proud of that
+// shared plane, toward the room, so they read as a lit frame around the
+// doorway to a player standing inside the hub.
+const DOOR_STRIP_THICK = 0.5 // width of the visible trim band
+const DOOR_STRIP_PROUD = 0.12 // how far it stands off the flush wall/door plane
+const DOOR_STRIP_Z = DOOR_NEAR_FACE - DOOR_STRIP_PROUD / 2
+// Overlaps both side strips at the corners, same mitring as TRIM boxes
+// elsewhere in this project (frame/lip borders) — one wide top bar rather
+// than three separately-jointed pieces.
+const DOOR_STRIP_TOP_WIDTH = DOOR_RIGHT - DOOR_LEFT + DOOR_STRIP_THICK * 2
+export const DOOR_LIGHT_STRIP_COLOR = '#37e6ff'
+export const HUB_DOOR_LIGHT_STRIPS = [
+  {
+    name: 'HubDoorLightStrip.top',
+    position: [DOOR.position[0], DOOR_TOP, DOOR_STRIP_Z],
+    size: [DOOR_STRIP_TOP_WIDTH, DOOR_STRIP_THICK, DOOR_STRIP_PROUD],
+  },
+  {
+    name: 'HubDoorLightStrip.left',
+    position: [DOOR_LEFT, DOOR_TOP / 2, DOOR_STRIP_Z],
+    size: [DOOR_STRIP_THICK, DOOR_TOP, DOOR_STRIP_PROUD],
+  },
+  {
+    name: 'HubDoorLightStrip.right',
+    position: [DOOR_RIGHT, DOOR_TOP / 2, DOOR_STRIP_Z],
+    size: [DOOR_STRIP_THICK, DOOR_TOP, DOOR_STRIP_PROUD],
+  },
+]
+
+// Vertical wall beams flanking the door — structural pilasters mounted
+// flush on HubWall.north.west/.east's own room-facing face (studded
+// SIDE_WALL material, via HubWalls.jsx's generic per-size material cache;
+// same "protrude proud of the wall's face into the room" treatment as
+// HUB_DOOR_LIGHT_STRIPS above, just a solid beam instead of unlit glow
+// trim). Centered at the door's own left/right edge (DOOR_LEFT/DOOR_RIGHT,
+// same x as HubDoorLightStrip.left/.right) so each beam frames the opening
+// the way a doorway pilaster would. Initially just the 2 flanking the door;
+// more can be added along the other walls following this same pattern.
+// Solid (registered as a collider in data/wallColliders.js) — unlike its
+// lookalike SIDE_WALL_BEAMS (data/sideWalls.js), which only re-skins a seam
+// already backed by solid wall, these pilasters stand proud into otherwise-
+// open room space next to the doorway, so the player would walk straight
+// through them without their own AABB.
+const WALL_BEAM_WIDTH = 3 // 2x the original 1.5m pilaster width
+const WALL_BEAM_PROTRUSION = 0.6 // how far it stands proud of the wall's room-facing face
+const WALL_BEAM_Z = NORTH_Z - WALL_HALF - WALL_BEAM_PROTRUSION / 2
+export const HUB_WALL_BEAMS = [
+  {
+    name: 'HubWallBeam.door.left',
+    position: [DOOR_LEFT, WALL_Y, WALL_BEAM_Z],
+    size: [WALL_BEAM_WIDTH, WALL_HEIGHT, WALL_BEAM_PROTRUSION],
+  },
+  {
+    name: 'HubWallBeam.door.right',
+    position: [DOOR_RIGHT, WALL_Y, WALL_BEAM_Z],
+    size: [WALL_BEAM_WIDTH, WALL_HEIGHT, WALL_BEAM_PROTRUSION],
+  },
+]
+
+// Horizontal beam capping the door — same pilaster cross-section as the
+// vertical beams above (WALL_BEAM_WIDTH thickness, WALL_BEAM_PROTRUSION
+// depth, same WALL_BEAM_Z proud plane), just rotated to run along X instead
+// of Y. Straddles DOOR_TOP the same way HUB_DOOR_LIGHT_STRIPS.top straddles
+// it (position y = DOOR_TOP, size y = its own thickness). Width is the
+// door's own span minus WALL_BEAM_WIDTH so its ends stop flush at
+// HubWallBeam.door.left/.right's own inner face instead of overlapping the
+// vertical beams' own half-width. Its own collider (data/wallColliders.js),
+// same reasoning as HUB_WALL_BEAMS: it stands proud into open room space
+// above the door, not backed by solid wall behind it.
+export const HUB_WALL_BEAM_TOP = {
+  name: 'HubWallBeam.door.top',
+  position: [DOOR.position[0], DOOR_TOP, WALL_BEAM_Z],
+  size: [DOOR.size[0] - WALL_BEAM_WIDTH, WALL_BEAM_WIDTH, WALL_BEAM_PROTRUSION],
+}
+
+// Beam edge light strips — same unlit, untone-mapped glow trim as
+// HUB_DOOR_LIGHT_STRIPS above (DOOR_LIGHT_STRIP_COLOR, CLAUDE.md's "fake it
+// with an emissive-looking MeshBasicMaterial shape, not a bloom pass"),
+// applied to each HUB_WALL_BEAMS pilaster's own two vertical (X) edges, proud
+// of its own room-facing (south) face — so each beam reads as a lit doorway
+// pilaster instead of a bare studded column. Generated straight from
+// HUB_WALL_BEAMS so a beam move/resize carries the strips along
+// automatically; nothing here is hand-tuned per beam.
+const WALL_BEAM_STRIP_THICK = 0.35 // matches the door's own trim width
+const WALL_BEAM_STRIP_PROUD = 0.12 // matches the door's own protrusion
+export const WALL_BEAM_STRIP_COLOR = '#ffffff'
+const HUB_WALL_BEAM_VERTICAL_LIGHT_STRIPS = HUB_WALL_BEAMS.flatMap(({ name, position, size }) => {
+  const [width, , depth] = size
+  const roomFaceZ = position[2] - depth / 2 // beam's own south, room-facing face
+  const stripZ = roomFaceZ - WALL_BEAM_STRIP_PROUD / 2
+  return [-1, 1].map((edgeSign) => ({
+    name: `${name}.edge.${edgeSign < 0 ? 'left' : 'right'}`,
+    position: [position[0] + (edgeSign * width) / 2, position[1], stripZ],
+    size: [WALL_BEAM_STRIP_THICK, WALL_HEIGHT, WALL_BEAM_STRIP_PROUD],
+  }))
+})
+
+// Same edge-glow treatment along HUB_WALL_BEAM_TOP's own bottom edge — the
+// underside a player actually sees walking beneath it, echoing
+// HUB_DOOR_LIGHT_STRIPS.top's own placement one level up.
+const HUB_WALL_BEAM_TOP_LIGHT_STRIP = (() => {
+  const [width, height, depth] = HUB_WALL_BEAM_TOP.size
+  const roomFaceZ = HUB_WALL_BEAM_TOP.position[2] - depth / 2
+  return {
+    name: `${HUB_WALL_BEAM_TOP.name}.edge.bottom`,
+    position: [
+      HUB_WALL_BEAM_TOP.position[0],
+      HUB_WALL_BEAM_TOP.position[1] - height / 2,
+      roomFaceZ - WALL_BEAM_STRIP_PROUD / 2,
+    ],
+    size: [width, WALL_BEAM_STRIP_THICK, WALL_BEAM_STRIP_PROUD],
+  }
+})()
+
+export const HUB_WALL_BEAM_LIGHT_STRIPS = [...HUB_WALL_BEAM_VERTICAL_LIGHT_STRIPS, HUB_WALL_BEAM_TOP_LIGHT_STRIP]

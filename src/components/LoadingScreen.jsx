@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { BASE_RIG_MAX_ATTEMPTS, requestAvatarRetry, subscribeAvatarStatus } from '../systems/avatarReadiness.js'
+import { DEV_MODE } from '../systems/devMode.js'
 
 // Full-screen DOM overlay, a sibling of <Canvas> in App.jsx (never drei
 // <Html>) — sits over the canvas until the Bloxity character has actually
@@ -22,9 +23,11 @@ export default function LoadingScreen() {
 
   // Fades out FADE_MS after the character is ready; reopens immediately (no
   // fade) the moment it isn't — `ready` is live, so this can happen again
-  // later (a CDN blip mid-game), not just at boot.
+  // later (a CDN blip mid-game), not just at boot. DEV_MODE skips the gate
+  // entirely: the game starts right away even if the avatar never loads
+  // (Player.jsx's capsule fallback covers the visual until/unless it does).
   useEffect(() => {
-    if (!status.ready) {
+    if (!status.ready && !DEV_MODE) {
       setHidden(false)
       return
     }
