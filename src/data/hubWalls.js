@@ -154,34 +154,112 @@ export const HUB_DOOR_LIGHT_STRIPS = [
   },
 ]
 
-// Vertical wall beams flanking the door — structural pilasters mounted
-// flush on HubWall.north.west/.east's own room-facing face (studded
-// SIDE_WALL material, via HubWalls.jsx's generic per-size material cache;
-// same "protrude proud of the wall's face into the room" treatment as
-// HUB_DOOR_LIGHT_STRIPS above, just a solid beam instead of unlit glow
-// trim). Centered at the door's own left/right edge (DOOR_LEFT/DOOR_RIGHT,
-// same x as HubDoorLightStrip.left/.right) so each beam frames the opening
-// the way a doorway pilaster would. Initially just the 2 flanking the door;
-// more can be added along the other walls following this same pattern.
-// Solid (registered as a collider in data/wallColliders.js) — unlike its
-// lookalike SIDE_WALL_BEAMS (data/sideWalls.js), which only re-skins a seam
-// already backed by solid wall, these pilasters stand proud into otherwise-
-// open room space next to the doorway, so the player would walk straight
-// through them without their own AABB.
+// Vertical wall beams ringing the entire hub interior — same pilaster
+// treatment as the original door-flanking pair (WALL_BEAM_WIDTH thickness,
+// WALL_BEAM_PROTRUSION depth, studded SIDE_WALL material via HubWalls.jsx's
+// generic per-size material cache), now repeated along every wall run
+// (west/east/south/both north segments) at roughly WALL_BEAM_TARGET_SPACING
+// apart instead of just the 2 next to the door. Solid (registered as a
+// collider in data/wallColliders.js) — unlike its lookalike SIDE_WALL_BEAMS
+// (data/sideWalls.js), which only re-skins a seam already backed by solid
+// wall, these pilasters stand proud into otherwise-open room space, so the
+// player would walk straight through them without their own AABB.
+//
+// West/east walls run along Z and protrude along ±X; south/the two north
+// segments run along X and protrude along ±Z — a single flat width/depth
+// pair (like the original 2 door beams used) only describes a north-facing
+// beam, so each beam here also records edgeAxis (0 or 2: which axis is the
+// beam's own width, i.e. where HUB_WALL_BEAM_LIGHT_STRIPS below puts its two
+// edge strips) and faceSign (which way along the other axis it protrudes,
+// toward the room).
 const WALL_BEAM_WIDTH = 3 // 2x the original 1.5m pilaster width
 const WALL_BEAM_PROTRUSION = 0.6 // how far it stands proud of the wall's room-facing face
-const WALL_BEAM_Z = NORTH_Z - WALL_HALF - WALL_BEAM_PROTRUSION / 2
+const WALL_BEAM_TARGET_SPACING = 20 // metres between consecutive beam centers, approximate — see beamRunPositions
+
+// Evenly spaces beam centers along a straight run from `start` to `end`,
+// snapping both ends to the wall's own corners (so every corner gets a
+// beam) and picking whatever pitch divides the run into the whole number of
+// steps closest to WALL_BEAM_TARGET_SPACING, rather than a fixed 20m stride
+// that would leave an undersized leftover gap at one end.
+function beamRunPositions(start, end) {
+  const length = end - start
+  const count = Math.max(2, Math.round(length / WALL_BEAM_TARGET_SPACING) + 1)
+  const step = length / (count - 1)
+  return Array.from({ length: count }, (_, i) => start + i * step)
+}
+
+// A beam mounted on a wall that runs along X (south wall, both north
+// segments) — width along X, protrudes along Z. `faceCoord` is that wall's
+// own room-facing surface (e.g. NORTH_FACE_Z below); `faceSign` is which way
+// from it the room lies (-1 = toward -Z, +1 = toward +Z).
+function makeXRunBeam(name, x, faceCoord, faceSign) {
+  return {
+    name,
+    position: [x, WALL_Y, faceCoord + (faceSign * WALL_BEAM_PROTRUSION) / 2],
+    size: [WALL_BEAM_WIDTH, WALL_HEIGHT, WALL_BEAM_PROTRUSION],
+    edgeAxis: 0,
+    faceSign,
+  }
+}
+
+// A beam mounted on a wall that runs along Z (west/east walls) — width
+// along Z, protrudes along X. Same faceCoord/faceSign meaning as above, just
+// the other horizontal axis.
+function makeZRunBeam(name, z, faceCoord, faceSign) {
+  return {
+    name,
+    position: [faceCoord + (faceSign * WALL_BEAM_PROTRUSION) / 2, WALL_Y, z],
+    size: [WALL_BEAM_PROTRUSION, WALL_HEIGHT, WALL_BEAM_WIDTH],
+    edgeAxis: 2,
+    faceSign,
+  }
+}
+
+const NORTH_FACE_Z = NORTH_Z - WALL_HALF // room-facing surface shared by both north segments
+const SOUTH_FACE_Z = SOUTH_Z + WALL_HALF
+const WEST_FACE_X = WEST_X + WALL_HALF
+const EAST_FACE_X = EAST_X - WALL_HALF
+const WALL_BEAM_Z = NORTH_FACE_Z - WALL_BEAM_PROTRUSION / 2 // the original door beams' own proud plane, reused by HUB_WALL_BEAM_TOP below
+
+// The original 2 door-flanking beams, now built with the same helper as
+// every other wall's beams (unchanged position/size from before).
+const DOOR_BEAMS = [
+  makeXRunBeam('HubWallBeam.door.left', DOOR_LEFT, NORTH_FACE_Z, -1),
+  makeXRunBeam('HubWallBeam.door.right', DOOR_RIGHT, NORTH_FACE_Z, -1),
+]
+
+// Each north segment's own remaining beams — beamRunPositions across its
+// full WEST_X..DOOR_LEFT / DOOR_RIGHT..EAST_X run, dropping whichever
+// endpoint already has a DOOR_BEAMS entry so it isn't placed twice.
+const NORTH_WEST_BEAMS = beamRunPositions(WEST_X, DOOR_LEFT)
+  .slice(0, -1)
+  .map((x, i) => makeXRunBeam(`HubWallBeam.north.west.${i}`, x, NORTH_FACE_Z, -1))
+const NORTH_EAST_BEAMS = beamRunPositions(DOOR_RIGHT, EAST_X)
+  .slice(1)
+  .map((x, i) => makeXRunBeam(`HubWallBeam.north.east.${i}`, x, NORTH_FACE_Z, -1))
+
+// South/west/east each get a beam at both of their own corners plus however
+// many fit evenly in between — so a corner naturally gets one beam from
+// each of the two walls that meet there (e.g. HubWallBeam.south.0 and
+// HubWallBeam.west.0 both sit at the WEST_X/SOUTH_Z corner), which reads as
+// a reinforced corner pillar rather than a gap.
+const SOUTH_BEAMS = beamRunPositions(WEST_X, EAST_X).map((x, i) =>
+  makeXRunBeam(`HubWallBeam.south.${i}`, x, SOUTH_FACE_Z, 1)
+)
+const WEST_BEAMS = beamRunPositions(SOUTH_Z, NORTH_Z).map((z, i) =>
+  makeZRunBeam(`HubWallBeam.west.${i}`, z, WEST_FACE_X, 1)
+)
+const EAST_BEAMS = beamRunPositions(SOUTH_Z, NORTH_Z).map((z, i) =>
+  makeZRunBeam(`HubWallBeam.east.${i}`, z, EAST_FACE_X, -1)
+)
+
 export const HUB_WALL_BEAMS = [
-  {
-    name: 'HubWallBeam.door.left',
-    position: [DOOR_LEFT, WALL_Y, WALL_BEAM_Z],
-    size: [WALL_BEAM_WIDTH, WALL_HEIGHT, WALL_BEAM_PROTRUSION],
-  },
-  {
-    name: 'HubWallBeam.door.right',
-    position: [DOOR_RIGHT, WALL_Y, WALL_BEAM_Z],
-    size: [WALL_BEAM_WIDTH, WALL_HEIGHT, WALL_BEAM_PROTRUSION],
-  },
+  ...DOOR_BEAMS,
+  ...NORTH_WEST_BEAMS,
+  ...NORTH_EAST_BEAMS,
+  ...SOUTH_BEAMS,
+  ...WEST_BEAMS,
+  ...EAST_BEAMS,
 ]
 
 // Horizontal beam capping the door — same pilaster cross-section as the
@@ -203,23 +281,36 @@ export const HUB_WALL_BEAM_TOP = {
 // Beam edge light strips — same unlit, untone-mapped glow trim as
 // HUB_DOOR_LIGHT_STRIPS above (DOOR_LIGHT_STRIP_COLOR, CLAUDE.md's "fake it
 // with an emissive-looking MeshBasicMaterial shape, not a bloom pass"),
-// applied to each HUB_WALL_BEAMS pilaster's own two vertical (X) edges, proud
-// of its own room-facing (south) face — so each beam reads as a lit doorway
-// pilaster instead of a bare studded column. Generated straight from
-// HUB_WALL_BEAMS so a beam move/resize carries the strips along
-// automatically; nothing here is hand-tuned per beam.
+// applied to each HUB_WALL_BEAMS pilaster's own two width-wise edges, proud
+// of its own room-facing face — so each beam reads as a lit pilaster instead
+// of a bare studded column. Generated straight from HUB_WALL_BEAMS (using
+// each beam's own edgeAxis/faceSign, since west/east beams have their width
+// along Z and protrude along X, unlike the original north-facing pair) so a
+// beam move/resize carries the strips along automatically; nothing here is
+// hand-tuned per beam. Labeled edge.left/.right by sign, not compass
+// direction — for a west/east wall beam those are its top/bottom (Z) edges.
 const WALL_BEAM_STRIP_THICK = 0.35 // matches the door's own trim width
 const WALL_BEAM_STRIP_PROUD = 0.12 // matches the door's own protrusion
 export const WALL_BEAM_STRIP_COLOR = '#ffffff'
-const HUB_WALL_BEAM_VERTICAL_LIGHT_STRIPS = HUB_WALL_BEAMS.flatMap(({ name, position, size }) => {
-  const [width, , depth] = size
-  const roomFaceZ = position[2] - depth / 2 // beam's own south, room-facing face
-  const stripZ = roomFaceZ - WALL_BEAM_STRIP_PROUD / 2
-  return [-1, 1].map((edgeSign) => ({
-    name: `${name}.edge.${edgeSign < 0 ? 'left' : 'right'}`,
-    position: [position[0] + (edgeSign * width) / 2, position[1], stripZ],
-    size: [WALL_BEAM_STRIP_THICK, WALL_HEIGHT, WALL_BEAM_STRIP_PROUD],
-  }))
+const HUB_WALL_BEAM_VERTICAL_LIGHT_STRIPS = HUB_WALL_BEAMS.flatMap(({ name, position, size, edgeAxis, faceSign }) => {
+  const faceAxis = edgeAxis === 0 ? 2 : 0
+  const width = size[edgeAxis]
+  const depth = size[faceAxis]
+  const frontFace = position[faceAxis] + (faceSign * depth) / 2 // beam's own room-facing tip
+  const stripCoord = frontFace + (faceSign * WALL_BEAM_STRIP_PROUD) / 2
+  return [-1, 1].map((edgeSign) => {
+    const stripPosition = [...position]
+    stripPosition[edgeAxis] += (edgeSign * width) / 2
+    stripPosition[faceAxis] = stripCoord
+    const stripSize = [0, WALL_HEIGHT, 0]
+    stripSize[edgeAxis] = WALL_BEAM_STRIP_THICK
+    stripSize[faceAxis] = WALL_BEAM_STRIP_PROUD
+    return {
+      name: `${name}.edge.${edgeSign < 0 ? 'left' : 'right'}`,
+      position: stripPosition,
+      size: stripSize,
+    }
+  })
 })
 
 // Same edge-glow treatment along HUB_WALL_BEAM_TOP's own bottom edge — the

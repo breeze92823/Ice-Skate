@@ -14,7 +14,7 @@ export default function SkateRackSign() {
   const y = backTopY + CLEARANCE + SIGN_H / 2
 
   return (
-    <group position={[0, y, z]}>
+    <group position={[0, y, z+1]}>
       <mesh castShadow receiveShadow>
         <boxGeometry args={[SIGN_W, SIGN_H, SIGN_THICK]} />
         <meshStandardMaterial color="#23262c" {...MATERIAL_PBR.SKATE_RACK_SIGN_BEZEL} />
