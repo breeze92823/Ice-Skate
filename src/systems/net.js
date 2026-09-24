@@ -126,6 +126,11 @@ function avatarPayload() {
     const json = JSON.stringify({
       e: avatarState.equipped || {},
       p: avatarState.proportions || {},
+      // Equipped SkateRack tier (store/useGameStore.js equippedHexPad) — not
+      // part of the Bloxity avatar itself, but riding along on the same
+      // payload/avatarRev means a remote's rig rebuilds and picks up their
+      // new tier for free, no separate wire message needed.
+      sk: useGameStore.getState().equippedHexPad,
     })
     return json.length <= AVATAR_MAX_LEN ? json : ''
   } catch {
@@ -156,7 +161,16 @@ function sanitizeEquipped(raw) {
   return out
 }
 
-// Parse an inbound `avatar` schema string into { equipped, proportions }.
+// A non-negative integer index into HEX_SPEED_PAD_TIERS, same default (0) as
+// useGameStore's own equippedHexPad — an older peer's payload with no `sk`
+// field at all (or garbage on the wire) still resolves to a real tier
+// instead of leaving a remote with no skate.
+function sanitizeSkateTier(raw) {
+  const n = Number(raw)
+  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0
+}
+
+// Parse an inbound `avatar` schema string into { equipped, proportions, skateTier }.
 function parseAvatar(str) {
   let obj = null
   if (typeof str === 'string' && str) {
@@ -169,6 +183,7 @@ function parseAvatar(str) {
   return {
     equipped: sanitizeEquipped(obj && obj.e),
     proportions: sanitizeProportions(obj && obj.p),
+    skateTier: sanitizeSkateTier(obj && obj.sk),
   }
 }
 
@@ -233,6 +248,9 @@ function scheduleStatsResend() {
 // filters out the unrelated ones (buying a hex pad, ...) rather than
 // scheduling a pointless resend for every one of them.
 let lastScheduledStats = { speed: undefined, rebirth: undefined, wins: undefined, timePlayed: undefined }
+// Separate from lastScheduledStats: this drives the avatar payload's `sk`
+// field (equipped SkateRack tier), not the stats packet.
+let lastScheduledSkateTier
 
 function onLocalStoreChange(state) {
   if (
@@ -243,6 +261,10 @@ function onLocalStoreChange(state) {
   ) {
     lastScheduledStats = { speed: state.speed, rebirth: state.rebirth, wins: state.wins, timePlayed: state.timePlayed }
     scheduleStatsResend()
+  }
+  if (state.equippedHexPad !== lastScheduledSkateTier) {
+    lastScheduledSkateTier = state.equippedHexPad
+    scheduleAvatarResend()
   }
 }
 
@@ -705,6 +727,7 @@ function ingestRemote(id, s, now) {
       avatarRaw: s.avatar || '',
       equipped: parsed.equipped,
       proportions: parsed.proportions,
+      skateTier: parsed.skateTier,
       avatarRev: 0,
       // 0 until their first `stats` packet — getLeaderboard() below just
       // reads whatever's here, no special-casing.
@@ -740,6 +763,7 @@ function ingestRemote(id, s, now) {
     e.avatarRaw = nextAvatar
     e.equipped = parsed.equipped
     e.proportions = parsed.proportions
+    e.skateTier = parsed.skateTier
     e.avatarRev++
     emit() // the character changed — rebuild the rig
   }

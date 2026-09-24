@@ -40,8 +40,12 @@ export default function EquippedSkates() {
 // forward-facing, and `scale` cancels the rig's own authored-unit-to-metre
 // shrink so the skate matches its real-world size while still growing or
 // shrinking with the leg's own scale (avatar height proportion).
-export function EquippedLegSkate({ y, quat, scale, side }) {
-  const bootColor = useEquippedBootColor()
+// `bootColor` lets a caller override the tier color instead of reading the
+// local store — RemotePlayers.jsx passes each remote's own synced tier so
+// remotes wear their own equipped skate, not the local player's.
+export function EquippedLegSkate({ y, quat, scale, side, bootColor: bootColorProp }) {
+  const localBootColor = useEquippedBootColor()
+  const bootColor = bootColorProp ?? localBootColor
   if (!bootColor) return null
 
   const fit = ICE_SKATE_LEG_FIT[side] ?? { x: 0, y: 0, z: 0 }

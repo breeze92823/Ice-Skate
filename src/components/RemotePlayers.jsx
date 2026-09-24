@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, createPortal } from '@react-three/fiber'
 import { Billboard, Text } from '@react-three/drei'
 import { remotePlayers, subscribe } from '../systems/net.js'
 import { buildAvatar, applyProportions, disposeAvatar } from '../systems/avatarModel.js'
 import { makeGait, updateGait, disposeGait } from '../systems/avatarAnim.js'
+import { EquippedLegSkate } from './EquippedSkates.jsx'
+import { HEX_SPEED_PAD_TIERS } from '../data/hexPowerPad.js'
 import { REMOTE_BODY } from '../data/net.js'
 import { MATERIAL_PBR } from '../data/materials.js'
 
@@ -17,10 +19,11 @@ import { MATERIAL_PBR } from '../data/materials.js'
 // avatar CDN load fails, and for any player past data/net.js
 // MAX_REMOTE_BODIES (those simply aren't tracked at all).
 //
-// Equipped skate cosmetics (SkateRack tier) aren't part of this — that's
-// driven by store/useGameStore.js's equippedHexPad locally only, and isn't
-// on the wire (RinkState.PlayerState carries the Bloxity avatar blob, not a
-// hex pad index), so remotes render the bare rig/capsule feet.
+// Equipped skate cosmetics (SkateRack tier) ride along in the same avatar
+// payload as a `sk` field (systems/net.js avatarPayload/parseAvatar) — each
+// remote's own equippedHexPad index, not the local player's — and get
+// portaled into the rig's leg bones exactly like PlayerAvatar.jsx does for
+// the local player (see legBones/bootColor below).
 
 const R = REMOTE_BODY.RADIUS
 const H = REMOTE_BODY.HEIGHT
@@ -33,6 +36,12 @@ const CYL = H - R * 2
 function RemoteAvatar({ id, rev, onReady }) {
   const groupRef = useRef(null)
   const gaitRef = useRef(null)
+  // LegL1/LegR1 (+ each leg's own sole offset) once a rig is built, plus this
+  // remote's own equipped tier color — drives the createPortal pair below,
+  // mirroring PlayerAvatar.jsx's legBones. React state (not a ref) because it
+  // must trigger a render: the portal target itself is JSX.
+  const [legBones, setLegBones] = useState(null)
+  const [bootColor, setBootColor] = useState(null)
 
   useEffect(() => {
     let built = null
@@ -48,6 +57,8 @@ function RemoteAvatar({ id, rev, onReady }) {
         disposeAvatar(built)
         built = null
       }
+      setLegBones(null)
+      setBootColor(null)
       onReady(false)
     }
 
@@ -71,6 +82,10 @@ function RemoteAvatar({ id, rev, onReady }) {
       applyProportions(built, e.proportions)
       groupRef.current.add(built.root)
       gaitRef.current = makeGait(built)
+      const legL = built.nodes.LegL1
+      const legR = built.nodes.LegR1
+      setLegBones(legL && legR ? { legL, legR, foot: built.legFoot } : null)
+      setBootColor(HEX_SPEED_PAD_TIERS[e.skateTier]?.beamColor ?? null)
       onReady(true)
     }
 
@@ -89,7 +104,18 @@ function RemoteAvatar({ id, rev, onReady }) {
     if (gait) updateGait(gait, Math.min(delta, 0.1), e ? e.rmoveBlend : 0)
   })
 
-  return <group ref={groupRef} />
+  return (
+    <group ref={groupRef}>
+      {legBones && bootColor && createPortal(
+        <EquippedLegSkate {...legBones.foot.L} side="L" bootColor={bootColor} />,
+        legBones.legL,
+      )}
+      {legBones && bootColor && createPortal(
+        <EquippedLegSkate {...legBones.foot.R} side="R" bootColor={bootColor} />,
+        legBones.legR,
+      )}
+    </group>
+  )
 }
 
 function RemoteBody({ id, name, avatarRev }) {
