@@ -24,7 +24,7 @@ that pattern, including the mistakes already made and fixed once.
 Exactly two lights, always:
 
 ```jsx
-<hemisphereLight args={['#eaf3ff', '#b7a98f', 1.1]} />
+<hemisphereLight args={['#eaf3ff', '#b7a98f', 1.4]} />
 <directionalLight
   position={[30, 45, 20]}
   intensity={2.3}
@@ -144,14 +144,14 @@ and lighting above look right:
     antialias: true,
     powerPreference: 'high-performance',
     toneMapping: ACESFilmicToneMapping,
-    toneMappingExposure: 1.2,
+    toneMappingExposure: 1.4,
     outputColorSpace: SRGBColorSpace,
   }}
   camera={{ fov: 55, near: 0.1, far: 200, position: [0, 6, 12] }}
 >
 ```
 
-- Tone mapping is always ACES Filmic at exposure `1.2`. If a material/light
+- Tone mapping is always ACES Filmic at exposure `1.4`. If a material/light
   looks "too flat" or "too washed out," fix its roughness/metalness/intensity
   — don't change global exposure to compensate for one prop.
 - Shadow type is `PCFSoftShadowMap`.
