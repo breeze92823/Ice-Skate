@@ -19,6 +19,10 @@ import { step as stepHammer } from '../systems/hammerAnim.js'
 import { step as stepHammerCrush } from '../systems/hammerCrush.js'
 import { step as stepCrusherAnim } from '../systems/crusherAnim.js'
 import { step as stepCrusherCrush } from '../systems/crusherCrush.js'
+import { step as stepCrusherSideAnim } from '../systems/crusherSideAnim.js'
+import { step as stepCrusherSideCrush } from '../systems/crusherSideCrush.js'
+import { step as stepCrusherUpAnim } from '../systems/crusherUpAnim.js'
+import { step as stepCrusherUpCrush } from '../systems/crusherUpCrush.js'
 import { step as stepMerchant } from '../systems/merchant.js'
 import { step as stepTeleportGate } from '../systems/teleportGate.js'
 import { step as stepInteract } from '../systems/interact.js'
@@ -63,6 +67,10 @@ export default function GameLoop() {
     stepHammerCrush()
     stepCrusherAnim(dt)
     stepCrusherCrush()
+    stepCrusherSideAnim(dt)
+    stepCrusherSideCrush()
+    stepCrusherUpAnim(dt)
+    stepCrusherUpCrush()
     stepMerchant()
     // Stage-select HUD panel's own proximity flag — a plain click target,
     // not one of the hold-to-confirm zones stepInteract resolves below.

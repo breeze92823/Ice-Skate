@@ -10,6 +10,7 @@ import { groundPhase } from './groundPhase.js'
 import { rampTopAt } from './rampCollision.js'
 import { treadmillTopAt, resolveTreadmills } from './treadmillCollision.js'
 import { skateRackTopAt, resolveSkateRack } from './skateRackCollision.js'
+import { stepLadder } from './ladderCollision.js'
 
 // Kinematic capsule, stepped once per frame: apply input -> gravity ->
 // integrate -> clamp to the island floor (or a GroundBlocks box footprint),
@@ -64,6 +65,9 @@ function bandedBlockTopAt(block, x, z) {
 function groundBlockTopAt(x, z, prevY, travelPad = 0) {
   for (const block of GROUND_BLOCKS) {
     if (block.phasing && !groundPhase.collidable) continue
+    // Ladder panels (systems/ladderCollision.js) handle their own vertical
+    // movement instead of being landed on/collided with here.
+    if (block.ladder) continue
     if (block.bands) {
       const top = bandedBlockTopAt(block, x, z)
       if (top !== null) return top
@@ -127,6 +131,7 @@ function resolveGroundBlocks(p, prevY) {
   for (const block of GROUND_BLOCKS) {
     if (block.phasing && !groundPhase.collidable) continue
     if (block.bands) continue
+    if (block.ladder) continue
     const [bx, by, bz] = block.position
     const [width, thickness, depth] = block.size
     const rotationY = block.rotationY ?? 0
@@ -244,72 +249,87 @@ export function step(dt) {
 
   approach2D(player.velocity, wishX * moveSpeed, wishZ * moveSpeed, ACCEL * dt)
 
-  // Jump reads last frame's grounded flag, then we clear it for this frame.
-  if (inputState.jump) {
-    if (player.grounded) player.velocity.y = JUMP_SPEED
-    inputState.jump = false
-  }
-  player.grounded = false
-
-  player.velocity.y += GRAVITY * dt
-
   const p = player.position
   const prevY = p.y // before this frame's own integration — see groundBlockTopAt's landing test
-  p.y += player.velocity.y * dt
 
-  // Horizontal move + wall resolution is substepped rather than applied as
-  // one big jump — see MAX_HORIZONTAL_STEP above for why a single full-frame
-  // move can tunnel through a thin panel at high moveSpeed. Each substep
-  // moves the player a bounded distance and immediately re-resolves walls/
-  // ground-block sides before the next substep, so no substep's move can
-  // clear a thin collider without a sample landing inside it first.
-  const dxTotal = player.velocity.x * dt
-  const dzTotal = player.velocity.z * dt
-  const horizDist = Math.hypot(dxTotal, dzTotal)
-  const steps = horizDist > MAX_HORIZONTAL_STEP ? Math.ceil(horizDist / MAX_HORIZONTAL_STEP) : 1
-  const stepX = dxTotal / steps
-  const stepZ = dzTotal / steps
-  for (let i = 0; i < steps; i++) {
-    p.x += stepX
-    p.z += stepZ
-    resolveSideWalls(p)
-    resolveGroundBlocks(p, prevY)
-  }
-  // The treadmill and SkateRack both sit on the main island, where
-  // blockTop/rampTop below are skipped entirely (that check exists for the
-  // off-island stage corridor, not the flat hub) — so these run
-  // unconditionally, on-island or not.
-  resolveTreadmills(p, prevY)
-  resolveSkateRack(p, prevY)
-
-  const onIsland = Math.abs(p.x - ISLAND_X) <= ISLAND_WIDTH / 2 && Math.abs(p.z - ISLAND_Z) <= ISLAND_DEPTH / 2
-  const blockTop = onIsland ? null : groundBlockTopAt(p.x, p.z, prevY, horizDist)
-  const rampTop = onIsland ? null : rampTopAt(p.x, p.z)
-  const treadmillTop = treadmillTopAt(p.x, p.z, prevY)
-  const skateRackTop = skateRackTopAt(p.x, p.z, prevY)
-  let floorTop = blockTop !== null && rampTop !== null ? Math.max(blockTop, rampTop) : (blockTop ?? rampTop)
-  if (treadmillTop !== null) floorTop = floorTop !== null ? Math.max(floorTop, treadmillTop) : treadmillTop
-  if (skateRackTop !== null) floorTop = floorTop !== null ? Math.max(floorTop, skateRackTop) : skateRackTop
-
-  if (onIsland) {
-    const surface = floorTop !== null ? Math.max(GROUND_Y, floorTop) : GROUND_Y
-    if (p.y <= surface) {
-      p.y = surface
-      if (player.velocity.y < 0) player.velocity.y = 0
-      player.grounded = true
-    }
-  } else if (floorTop !== null) {
-    if (p.y <= floorTop) {
-      p.y = floorTop
-      if (player.velocity.y < 0) player.velocity.y = 0
-      player.grounded = true
-    }
-  } else if (p.y <= WATER_Y) {
-    // Walked off the island (and off any ground block) — drown at the water surface.
-    p.y = WATER_Y
+  // Ladder panels (systems/ladderCollision.js, e.g. Ground.054) hoist the
+  // player straight up while forward is held against them, bypassing the
+  // usual jump/gravity/ground-clamp pipeline below entirely for the frame —
+  // `inputState.move.z` is the raw W/ArrowUp-vs-S/ArrowDown flag (set in
+  // input.js's recomputeMove), not the camera-relative wish direction above,
+  // since climbing direction is always "up the ladder" regardless of camera
+  // facing. Climbs at `moveSpeed`, the same ground speed walking uses, so it
+  // doesn't feel faster/slower than moving on foot.
+  if (stepLadder(p, dt, inputState.move.z > 0, moveSpeed)) {
+    player.velocity.x = 0
     player.velocity.y = 0
+    player.velocity.z = 0
     player.grounded = true
-    die()
+  } else {
+    // Jump reads last frame's grounded flag, then we clear it for this frame.
+    if (inputState.jump) {
+      if (player.grounded) player.velocity.y = JUMP_SPEED
+      inputState.jump = false
+    }
+    player.grounded = false
+
+    player.velocity.y += GRAVITY * dt
+    p.y += player.velocity.y * dt
+
+    // Horizontal move + wall resolution is substepped rather than applied as
+    // one big jump — see MAX_HORIZONTAL_STEP above for why a single full-frame
+    // move can tunnel through a thin panel at high moveSpeed. Each substep
+    // moves the player a bounded distance and immediately re-resolves walls/
+    // ground-block sides before the next substep, so no substep's move can
+    // clear a thin collider without a sample landing inside it first.
+    const dxTotal = player.velocity.x * dt
+    const dzTotal = player.velocity.z * dt
+    const horizDist = Math.hypot(dxTotal, dzTotal)
+    const steps = horizDist > MAX_HORIZONTAL_STEP ? Math.ceil(horizDist / MAX_HORIZONTAL_STEP) : 1
+    const stepX = dxTotal / steps
+    const stepZ = dzTotal / steps
+    for (let i = 0; i < steps; i++) {
+      p.x += stepX
+      p.z += stepZ
+      resolveSideWalls(p)
+      resolveGroundBlocks(p, prevY)
+    }
+    // The treadmill and SkateRack both sit on the main island, where
+    // blockTop/rampTop below are skipped entirely (that check exists for the
+    // off-island stage corridor, not the flat hub) — so these run
+    // unconditionally, on-island or not.
+    resolveTreadmills(p, prevY)
+    resolveSkateRack(p, prevY)
+
+    const onIsland = Math.abs(p.x - ISLAND_X) <= ISLAND_WIDTH / 2 && Math.abs(p.z - ISLAND_Z) <= ISLAND_DEPTH / 2
+    const blockTop = onIsland ? null : groundBlockTopAt(p.x, p.z, prevY, horizDist)
+    const rampTop = onIsland ? null : rampTopAt(p.x, p.z)
+    const treadmillTop = treadmillTopAt(p.x, p.z, prevY)
+    const skateRackTop = skateRackTopAt(p.x, p.z, prevY)
+    let floorTop = blockTop !== null && rampTop !== null ? Math.max(blockTop, rampTop) : (blockTop ?? rampTop)
+    if (treadmillTop !== null) floorTop = floorTop !== null ? Math.max(floorTop, treadmillTop) : treadmillTop
+    if (skateRackTop !== null) floorTop = floorTop !== null ? Math.max(floorTop, skateRackTop) : skateRackTop
+
+    if (onIsland) {
+      const surface = floorTop !== null ? Math.max(GROUND_Y, floorTop) : GROUND_Y
+      if (p.y <= surface) {
+        p.y = surface
+        if (player.velocity.y < 0) player.velocity.y = 0
+        player.grounded = true
+      }
+    } else if (floorTop !== null) {
+      if (p.y <= floorTop) {
+        p.y = floorTop
+        if (player.velocity.y < 0) player.velocity.y = 0
+        player.grounded = true
+      }
+    } else if (p.y <= WATER_Y) {
+      // Walked off the island (and off any ground block) — drown at the water surface.
+      p.y = WATER_Y
+      player.velocity.y = 0
+      player.grounded = true
+      die()
+    }
   }
 
   // Face the direction of travel.

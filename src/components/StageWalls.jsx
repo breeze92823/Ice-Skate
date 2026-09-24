@@ -44,11 +44,11 @@ const LABEL_OUTLINE_COLOR = '#000000'
 const LABEL_FORWARD_OFFSET = 0.15 // metres clear of the panel's back face
 
 // "Recommended Level: {n}" caption, stacked above the "Stage {n}" one from
-// each wall's own `recommendedLevel` (data/stageWalls.js — currently
-// placeholder filler numbers, not real difficulty figures yet). Same font
-// and facing/offset convention as the Stage caption, just smaller and in a
+// each wall's own `recommendedLevel` (data/stageWalls.js). Same font and
+// facing/offset convention as the Stage caption, just smaller and in a
 // contrasting blue so the two captions read as separate lines rather than
-// one run-on sentence.
+// one run-on sentence. Omitted when `recommendedLevel` is null (StageWall.013
+// / Stage13, the final stage — there's no next stage to recommend a level for).
 const LEVEL_LABEL_FONT_SIZE = 1.15
 const LEVEL_LABEL_COLOR = '#3fa9f5'
 const LEVEL_LABEL_OUTLINE_WIDTH = 0.05
@@ -58,7 +58,7 @@ const LEVEL_LABEL_Y_OFFSET = 3.1 // metres above the Stage caption's center
 export default function StageWalls() {
   return (
     <>
-      {STAGE_WALLS.map(({ name, position, size, rotationY = 0, stage, recommendedLevel }) => (
+      {STAGE_WALLS.map(({ name, position, size, rotationY = 0, stage, recommendedLevel, label }) => (
         <group key={name} position={position} rotation={[0, rotationY, 0]}>
           <mesh receiveShadow>
             <boxGeometry args={size} />
@@ -75,23 +75,25 @@ export default function StageWalls() {
             anchorX="center"
             anchorY="middle"
           >
-            {`Stage ${stage}`}
+            {label ?? `Stage ${stage}`}
           </Text>
-          <Text
-            position={[0, LEVEL_LABEL_Y_OFFSET, -(size[2] / 2 + LABEL_FORWARD_OFFSET)]}
-            rotation={[0, Math.PI, 0]}
-            font={LABEL_FONT_URL}
-            fontSize={LEVEL_LABEL_FONT_SIZE}
-            color={LEVEL_LABEL_COLOR}
-            outlineWidth={LEVEL_LABEL_OUTLINE_WIDTH}
-            outlineColor={LEVEL_LABEL_OUTLINE_COLOR}
-            textAlign="center"
-            anchorX="center"
-            anchorY="middle"
-            lineHeight={1.15}
-          >
-            {`Recommended\nLevel: ${recommendedLevel}`}
-          </Text>
+          {recommendedLevel != null && (
+            <Text
+              position={[0, LEVEL_LABEL_Y_OFFSET, -(size[2] / 2 + LABEL_FORWARD_OFFSET)]}
+              rotation={[0, Math.PI, 0]}
+              font={LABEL_FONT_URL}
+              fontSize={LEVEL_LABEL_FONT_SIZE}
+              color={LEVEL_LABEL_COLOR}
+              outlineWidth={LEVEL_LABEL_OUTLINE_WIDTH}
+              outlineColor={LEVEL_LABEL_OUTLINE_COLOR}
+              textAlign="center"
+              anchorX="center"
+              anchorY="middle"
+              lineHeight={1.15}
+            >
+              {`Recommended\nLevel: ${recommendedLevel}`}
+            </Text>
+          )}
         </group>
       ))}
     </>

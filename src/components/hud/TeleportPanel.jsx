@@ -6,12 +6,6 @@ import { playButtonClick } from '../../systems/sfx.js'
 
 const textOutline = { WebkitTextStroke: '1.5px black', paintOrder: 'stroke fill' }
 
-// TEMPORARY: only these stage ids show in the picker — the rest of STAGES
-// stays intact in data/stages.js, this just filters what's rendered below.
-// Remove this filter (and the .filter() call in the STAGES.map below) to
-// restore the full list.
-const VISIBLE_STAGE_IDS = new Set([5, 10, 12, 13])
-
 // Duplicated from Hud.jsx rather than imported — Hud.jsx already imports
 // this file (renders <TeleportPanel/>), so importing back from it would be
 // a circular module dependency for the sake of one 5-line pure function.
@@ -112,7 +106,7 @@ export default function TeleportPanel() {
         <div className="flex flex-col items-center gap-3 p-4 text-slate-100">
           <div className="w-full overflow-y-auto max-h-[26rem] pr-2">
             <div className="flex flex-col gap-2.5">
-              {STAGES.filter((stage) => VISIBLE_STAGE_IDS.has(stage.id)).map((stage) => (
+              {STAGES.map((stage) => (
                 <StageRow key={stage.id} stage={stage} wins={wins} rebirth={rebirth} spendWins={spendWins} />
               ))}
             </div>

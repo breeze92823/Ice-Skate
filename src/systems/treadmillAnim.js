@@ -18,6 +18,12 @@ export const treadmillAnim = new Map(TREADMILLS.map((t) => [t.name, { occupied: 
 // map) so that read costs nothing.
 export const anyTreadmillOccupied = { value: false }
 
+// The `speed` tier (1/2/3, matching data/treadmill.js's per-instance `speed`)
+// of whichever deck the player is currently occupying, else 1 — read by
+// speedGain.js so standing on Treadmill2/Treadmill3 gains Speed at that
+// deck's own multiplier instead of the flat walking rate.
+export const occupiedTreadmillSpeed = { value: 1 }
+
 const FEET_MARGIN = 0.35 // metres inset from the deck's outer edge before it counts as "on"
 const DECK_Y_TOLERANCE = 1 // metres above/below the treadmill's own base — covers either model's belt height
 
@@ -39,6 +45,7 @@ function isOnDeck({ position, rotationY, deckWidth, deckDepth }) {
 
 export function step(dt) {
   let occupied = false
+  let occupiedSpeed = 1
   const rebirth = useGameStore.getState().rebirth
   for (const treadmill of TREADMILLS) {
     const state = treadmillAnim.get(treadmill.name)
@@ -47,8 +54,10 @@ export function step(dt) {
     state.occupied = rebirth >= treadmill.rebirthRequired && isOnDeck(treadmill)
     if (state.occupied) {
       occupied = true
+      occupiedSpeed = treadmill.speed
       state.offset = (state.offset + (treadmill.beltSpeed / treadmill.deckDepth) * dt) % 1
     }
   }
   anyTreadmillOccupied.value = occupied
+  occupiedTreadmillSpeed.value = occupiedSpeed
 }

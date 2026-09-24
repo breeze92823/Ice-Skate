@@ -442,6 +442,13 @@ export const GROUND_BLOCKS = [
     name: 'Ground.054',
     position: [-325.5093688964844, 63.45986557006836, 1003.05908203125],
     size: [1.1285537481307983, 96.1390609741211, 2.5],
+    // Bridges Ground.053's platform (top ~18) up to the Ground.055/.056
+    // plateau (top ~111.3-111.5) it sits flush against — climbable like a
+    // ladder (systems/ladderCollision.js) instead of solid on its sides
+    // (playerMovement.js's resolveGroundBlocks/groundBlockTopAt both skip
+    // `ladder` blocks) so holding forward against it climbs straight up
+    // its face rather than just blocking the player.
+    ladder: true,
     ...GROUND_BLOCK_COLOR,
   },
   // GroundBlock.010 (Stage11) — re-synced 2026-09-23 (Blender edited

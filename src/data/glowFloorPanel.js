@@ -50,7 +50,7 @@ export const GLOW_FLOOR_PANEL_POSITIONS = [
 // aligned with GLOW_FLOOR_PANEL_POSITIONS. Ramps up per stage following the
 // existing Stage2-6 1-3-10-30-100 decade taper (×3, then ×10/3, repeating)
 // continued straight through Stage7-13.
-export const GLOW_FLOOR_PANEL_WINS = [1, 3, 10, 30, 100, 300, 1000, 3000, 10000, 30000, 100000, 300000]
+export const GLOW_FLOOR_PANEL_WINS = [1, 3, 10, 20, 25, 50, 100, 150, 300, 600, 1000, 2000]
 
 // Horizontal (X/Z) distance from the panel's placement position within which
 // the player counts as standing on it.

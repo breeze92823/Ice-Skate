@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react'
 import { MeshStandardMaterial } from 'three'
 import { MATERIAL_PBR } from '../data/materials.js'
 import { makeStudTexture } from '../systems/studTexture.js'
-import { STAGE10_SEGMENTS, STAGE10_ROOFS, STAGE10_DOOR_FILLS } from '../data/stage10Walls.js'
+import { STAGE10_SEGMENTS, STAGE10_JOGS, STAGE10_ROOFS, STAGE10_DOOR_FILLS } from '../data/stage10Walls.js'
 
 // Guard-wall container for the Stage10 -> Stage11 corridor — see
 // data/stage10Walls.js for the full layout (a plain normal-width X-run
@@ -31,7 +31,7 @@ function buildMaterialsForSize(width, height, depth) {
 
 export default function Stage10Walls() {
   const pieces = useMemo(
-    () => [...STAGE10_SEGMENTS, ...STAGE10_ROOFS, ...STAGE10_DOOR_FILLS],
+    () => [...STAGE10_SEGMENTS, ...STAGE10_JOGS, ...STAGE10_ROOFS, ...STAGE10_DOOR_FILLS],
     []
   )
 

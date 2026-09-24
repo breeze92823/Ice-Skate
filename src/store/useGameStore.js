@@ -37,6 +37,18 @@ function derive(state) {
   return { ...state, level: levelForSpeed(state.speed) }
 }
 
+// The player's own naturally-earned moveSpeed ceiling — equipped tier's base
+// + this-run's level bonus, the same formula equipHexPad/gainSpeed compute
+// moveSpeed from. setMoveSpeed clamps to this (not MOVE_SPEED_MAX) so a
+// custom value can never exceed what's actually been unlocked. Exported as a
+// selector (`useGameStore(selectMoveSpeedCap)`) so components/hud/
+// MoveSpeedBadge.jsx can show the same ceiling it's being clamped to.
+function moveSpeedCap(state) {
+  const tier = HEX_SPEED_PAD_TIERS[state.equippedHexPad]
+  return tier ? WALK_SPEED_BASE + tier.moveSpeed + state.moveSpeedLevelBonus : state.moveSpeed
+}
+export const selectMoveSpeedCap = moveSpeedCap
+
 export const useGameStore = create((set, get) => ({
   speed: SPEED_INITIAL,
   level: LEVEL_INITIAL,
@@ -150,6 +162,17 @@ export const useGameStore = create((set, get) => ({
       speedPerGain: tier.speedPerGain,
       moveSpeed: clamp(WALK_SPEED_BASE + tier.moveSpeed + s.moveSpeedLevelBonus, MOVE_SPEED_MIN, MOVE_SPEED_MAX),
     }))
+  },
+
+  // Called from components/hud/MoveSpeedBadge.jsx once the player types a
+  // custom value into the clicked HUD readout. Clamped to the player's own
+  // naturally-earned ceiling (equipped tier's base + this-run's level bonus —
+  // the same formula equipHexPad/gainSpeed compute moveSpeed from) rather
+  // than MOVE_SPEED_MAX, so this can only ever lower/restore movement speed
+  // within what's actually been unlocked, never grant more.
+  setMoveSpeed(value) {
+    if (!Number.isFinite(value)) return
+    set((s) => ({ moveSpeed: clamp(value, MOVE_SPEED_MIN, moveSpeedCap(s)) }))
   },
 
   // Called from components/hud/Hud.jsx's AuraEntry wins button. Buying

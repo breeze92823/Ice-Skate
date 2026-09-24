@@ -10,7 +10,7 @@ import { health as playerHealth } from './playerHealth.js'
 import { useGameStore } from '../store/useGameStore.js'
 import { spawnActionPopup } from './actionPopups.js'
 import { WALK_GAIN_INTERVAL } from '../data/progression.js'
-import { anyTreadmillOccupied } from './treadmillAnim.js'
+import { anyTreadmillOccupied, occupiedTreadmillSpeed } from './treadmillAnim.js'
 
 let walkElapsed = 0
 
@@ -28,6 +28,8 @@ export function step(dt) {
   walkElapsed += dt
   while (walkElapsed >= WALK_GAIN_INTERVAL) {
     walkElapsed -= WALK_GAIN_INTERVAL
-    spawnActionPopup(useGameStore.getState().gainSpeed(1))
+    // On an occupied Treadmill2/Treadmill3 deck, gain at that deck's own
+    // speed tier (x2/x3) instead of the flat x1 walking rate.
+    spawnActionPopup(useGameStore.getState().gainSpeed(occupiedTreadmillSpeed.value))
   }
 }

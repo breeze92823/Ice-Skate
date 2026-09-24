@@ -23,6 +23,8 @@ import Stage12Walls from './components/Stage12Walls.jsx'
 import StageWalls from './components/StageWalls.jsx'
 import Hammer from './components/Hammer.jsx'
 import CrusherWalls from './components/CrusherWalls.jsx'
+import CrusherSide from './components/CrusherSide.jsx'
+import CrusherUp from './components/CrusherUp.jsx'
 import RampBlock from './components/RampBlock.jsx'
 import Road from './components/Road.jsx'
 import Player from './components/Player.jsx'
@@ -70,6 +72,8 @@ export default function App() {
           <GlowFloorPanels />
           <Hammer />
           <CrusherWalls />
+          <CrusherSide />
+          <CrusherUp />
           <RampBlock />
         </Suspense>
         <Road />

@@ -8,9 +8,10 @@ import { STAGE6_SEGMENTS, STAGE6_JOGS } from './stage6Walls.js'
 import { STAGE7_SEGMENTS, STAGE7_JOGS } from './stage7Walls.js'
 import { STAGE8_SEGMENTS, STAGE8_JOGS } from './stage8Walls.js'
 import { STAGE9_SEGMENTS, STAGE9_JOGS } from './stage9Walls.js'
-import { STAGE10_SEGMENTS, STAGE10_DOOR_FILLS } from './stage10Walls.js'
+import { STAGE10_SEGMENTS, STAGE10_JOGS, STAGE10_DOOR_FILLS } from './stage10Walls.js'
 import { STAGE11_SEGMENTS, STAGE11_JOGS, STAGE11_DOOR_FILLS } from './stage11Walls.js'
 import { STAGE12_SEGMENTS, STAGE12_JOGS } from './stage12Walls.js'
+import { STAGE13_END_WALL_COLLIDER } from './stageWalls.js'
 
 // Every boundary-wall box in the game, concatenated once at module scope —
 // moved out of systems/playerMovement.js into this dependency-free data
@@ -29,6 +30,12 @@ import { STAGE12_SEGMENTS, STAGE12_JOGS } from './stage12Walls.js'
 // shape category or one stage's corridor guard walls — see
 // systems/playerMovement.js's resolveSideWalls for the per-shape history/
 // reasoning behind this list; unchanged here, just relocated.
+//
+// STAGE13_END_WALL_COLLIDER (data/stageWalls.js) is the one exception: every
+// other StageWall.NNN glass panel (components/StageWalls.jsx) is visual-only
+// and deliberately absent from this list, but StageWall.013 is the final
+// stage's own end wall with no further corridor beyond it, so it's the only
+// StageWall that actually stops the player.
 export const SIDE_WALL_COLLIDERS = [
   ...HUB_WALLS,
   HUB_DOOR_FILL,
@@ -55,10 +62,12 @@ export const SIDE_WALL_COLLIDERS = [
   ...STAGE9_SEGMENTS,
   ...STAGE9_JOGS,
   ...STAGE10_SEGMENTS,
+  ...STAGE10_JOGS,
   ...STAGE10_DOOR_FILLS,
   ...STAGE11_SEGMENTS,
   ...STAGE11_JOGS,
   ...STAGE11_DOOR_FILLS,
   ...STAGE12_SEGMENTS,
   ...STAGE12_JOGS,
+  STAGE13_END_WALL_COLLIDER,
 ]
