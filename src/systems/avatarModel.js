@@ -12,6 +12,7 @@ import {
   BASE_MODEL_URL,
   RIG,
   RIG_HEIGHT,
+  RIG_MOUNT_OFFSET,
   isEquipped,
   itemUrls,
   partUrl,
@@ -169,6 +170,19 @@ function footOffsetY(bone) {
   return _footPos.y
 }
 
+// LegL1/LegR1 live inside built.root, which applyProportions scales down by
+// (PLAYER_HEIGHT / RIG_HEIGHT) * p.height to convert the rig's authored
+// units into metres. A shoe built in real-world metres (data/iceSkate.js)
+// and parented onto the bone would inherit that same shrink and render at a
+// fraction of its intended size. This constant is the inverse of the unit
+// conversion only (not of p.height), applied as the shoe group's own local
+// scale: it cancels the rig-unit mismatch so the shoe matches its authored
+// metre size at the default proportions, while still growing/shrinking with
+// p.height like the rest of the rig, since that factor stays live on
+// built.root and multiplies through — the shoe scales with the leg's actual
+// size rather than staying pinned to one fixed size.
+const LEG_ITEM_SCALE = RIG_HEIGHT / PLAYER_HEIGHT
+
 // Bone-local Y offset to the sole (footOffsetY) plus the inverse of the
 // bone's own bind-pose rotation. LegL1/LegR1's bind quaternion is not
 // identity — the rig points a leg's local Y/Z axes down/sideways rather than
@@ -182,6 +196,7 @@ function legFootTransform(bone) {
   return {
     y: footOffsetY(bone),
     quat: bone ? bone.quaternion.clone().invert().toArray() : [0, 0, 0, 1],
+    scale: LEG_ITEM_SCALE,
   }
 }
 
@@ -324,6 +339,8 @@ export function applyProportions(built, p) {
   if (n.Spine1) n.Spine1.scale.x = p.torsoScaleX
   if (n.Neck_Offset) n.Neck_Offset.position.y = RIG.neckOffsetY * p.neckHeight
   if (n.Neck1) n.Neck1.scale.setScalar(p.headScale)
+
+  built.root.position.set(RIG_MOUNT_OFFSET.x, RIG_MOUNT_OFFSET.y, RIG_MOUNT_OFFSET.z)
 
   built.root.scale.setScalar((PLAYER_HEIGHT / RIG_HEIGHT) * p.height)
 

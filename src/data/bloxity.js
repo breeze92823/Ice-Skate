@@ -25,6 +25,16 @@ export const RIG = {
   neckOffsetY: 0.6, // Neck_Offset.y
 }
 
+// Manual mount offset for the whole avatar rig (built.root), relative to
+// Player.jsx's own group — which sits at the capsule's feet/origin in world
+// space. player.glb's stated origin is already the feet (see RIG_HEIGHT
+// above), so this defaults to zero; only nudge it if a specific rig build
+// needs the whole body shifted to align against the capsule/collider or
+// ground. Applied in avatarModel.js's applyProportions(), in *metres*
+// (world/Player space, after built.root's own scale) — not rig-authored
+// units, unlike RIG's offsets above.
+export const RIG_MOUNT_OFFSET = { x: 0, y: 0.13, z: 0 }
+
 // getProportions() ranges, straight from the SDK spec. Values arrive from a
 // remote portal, so everything is clamped before it reaches the scene graph.
 export const PROPORTIONS = {

@@ -12,7 +12,7 @@
 // leaves the avatar static, the same way a failed load leaves Player on the
 // capsule.
 import * as THREE from 'three'
-import { GAIT, clamp } from '../data/bloxity.js'
+import { GAIT, RIG_MOUNT_OFFSET, clamp } from '../data/bloxity.js'
 
 // phase offset per limb: legs are half a cycle apart (one pushes off while
 // the other glides); each arm is anti-phase to the leg on its own side
@@ -117,7 +117,7 @@ export function updateGait(gait, dt, speed01, grounded = true, verticalVelocity 
       gait.q.setFromAxisAngle(AXES.x, GAIT.airborneLean)
       gait.spine.quaternion.copy(gait.spineBind).premultiply(gait.q)
     }
-    gait.built.root.position.y = 0
+    gait.built.root.position.y = RIG_MOUNT_OFFSET.y
     return
   }
 
@@ -137,7 +137,7 @@ export function updateGait(gait, dt, speed01, grounded = true, verticalVelocity 
       gait.q.setFromAxisAngle(AXES.x, idle * GAIT.idleSpineSway)
       gait.spine.quaternion.copy(gait.spineBind).premultiply(gait.q)
     }
-    gait.built.root.position.y = idle * GAIT.idleBob
+    gait.built.root.position.y = RIG_MOUNT_OFFSET.y + idle * GAIT.idleBob
     return
   }
 
@@ -164,7 +164,7 @@ export function updateGait(gait, dt, speed01, grounded = true, verticalVelocity 
     gait.q2.setFromAxisAngle(gait.swayAxis, Math.sin(gait.phase) * GAIT.hipSway * gait.amp)
     gait.spine.quaternion.copy(gait.spineBind).premultiply(gait.q2).premultiply(gait.q)
   }
-  gait.built.root.position.y = Math.abs(Math.sin(gait.phase)) * GAIT.bob * gait.amp
+  gait.built.root.position.y = RIG_MOUNT_OFFSET.y + Math.abs(Math.sin(gait.phase)) * GAIT.bob * gait.amp
 }
 
 // Return the rig to its bind pose. Call before disposeAvatar(), while the
@@ -177,5 +177,5 @@ export function disposeGait(gait) {
   }
   for (const limb of gait.limbs) limb.bone.quaternion.copy(limb.bind)
   if (gait.spine) gait.spine.quaternion.copy(gait.spineBind)
-  if (gait.built && gait.built.root) gait.built.root.position.y = 0
+  if (gait.built && gait.built.root) gait.built.root.position.y = RIG_MOUNT_OFFSET.y
 }

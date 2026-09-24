@@ -1,6 +1,6 @@
 import { useGameStore } from '../store/useGameStore.js'
 import { HEX_SPEED_PAD_TIERS } from '../data/hexPowerPad.js'
-import { ICE_SKATE_PAIR_GAP } from '../data/iceSkate.js'
+import { ICE_SKATE_PAIR_GAP, ICE_SKATE_LEG_FIT } from '../data/iceSkate.js'
 import { SingleSkate } from './IceSkateShoes.jsx'
 
 // Renders the currently equipped skate (store's equippedHexPad — same tier
@@ -33,18 +33,26 @@ export default function EquippedSkates() {
 // One skate, meant to be createPortal'd straight into a LegL1/LegR1 bone
 // (PlayerAvatar.jsx) so it's a real child of that bone in the scene graph —
 // it inherits the leg's own gait rotation every frame for free, instead of
-// a separate component trying to re-derive the swing. `y` and `quat` come
-// from avatarModel.js's legFootTransform: `y` is the bone-local offset down
-// to that leg's sole, and `quat` cancels the bone's own (non-identity) bind
-// rotation so the skate sits right-side up and forward-facing instead of
-// inheriting the rig's own tilted rest orientation for that limb.
-export function EquippedLegSkate({ y, quat }) {
+// a separate component trying to re-derive the swing. `y`, `quat` and
+// `scale` come from avatarModel.js's legFootTransform: `y` is the bone-local
+// offset down to that leg's sole, `quat` cancels the bone's own
+// (non-identity) bind rotation so the skate sits right-side up and
+// forward-facing, and `scale` cancels the rig's own authored-unit-to-metre
+// shrink so the skate matches its real-world size while still growing or
+// shrinking with the leg's own scale (avatar height proportion).
+export function EquippedLegSkate({ y, quat, scale, side }) {
   const bootColor = useEquippedBootColor()
   if (!bootColor) return null
 
+  const fit = ICE_SKATE_LEG_FIT[side] ?? { x: 0, y: 0, z: 0 }
+
   return (
-    <group position-y={y} quaternion={quat}>
-      <SingleSkate bootColor={bootColor} />
+    <group position-y={y} quaternion={quat} scale={scale}>
+      {/* Manual per-leg fit nudge, in the shoe's own already-corrected
+          upright frame — see ICE_SKATE_LEG_FIT (data/iceSkate.js). */}
+      <group position={[fit.x, fit.y, fit.z]}>
+        <SingleSkate bootColor={bootColor} />
+      </group>
     </group>
   )
 }

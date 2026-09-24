@@ -101,8 +101,8 @@ export default function PlayerAvatar({ onReady }) {
 
   return (
     <group ref={groupRef}>
-      {legBones && createPortal(<EquippedLegSkate {...legBones.foot.L} />, legBones.legL)}
-      {legBones && createPortal(<EquippedLegSkate {...legBones.foot.R} />, legBones.legR)}
+      {legBones && createPortal(<EquippedLegSkate {...legBones.foot.L} side="L" />, legBones.legL)}
+      {legBones && createPortal(<EquippedLegSkate {...legBones.foot.R} side="R" />, legBones.legR)}
     </group>
   )
 }
