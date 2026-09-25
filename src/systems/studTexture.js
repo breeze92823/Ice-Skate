@@ -91,3 +91,55 @@ export function makeStudTexture({
   tex.anisotropy = 4
   return tex
 }
+
+function roundRectPath(ctx, x, y, size, r) {
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.arcTo(x + size, y, x + size, y + size, r)
+  ctx.arcTo(x + size, y + size, x, y + size, r)
+  ctx.arcTo(x, y + size, x, y, r)
+  ctx.arcTo(x, y, x + size, y, r)
+  ctx.closePath()
+}
+
+// DOM/CSS twin of the bevelled stud above, for HTML HUD elements (never a
+// three.js mesh, so no CanvasTexture/colorSpace concerns). One square stud
+// per `pitch`-square tile, drawn with translucent highlight/shadow only (no
+// solid fill) so it embosses over whatever CSS background/gradient sits
+// underneath it, e.g. `background: url(dataUrl), <gradient>` tiled with
+// `backgroundSize: '<pitch>px <pitch>px'`.
+export function makeStudOverlayDataURL(pitch = 32) {
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = pitch
+  const g = canvas.getContext('2d')
+  const size = pitch * 0.62
+  const x = (pitch - size) / 2
+  const y = (pitch - size) / 2
+  const r = size * 0.22
+
+  roundRectPath(g, x + pitch * 0.04, y + pitch * 0.06, size, r)
+  g.fillStyle = 'rgba(0,0,0,0.22)'
+  g.fill()
+
+  roundRectPath(g, x, y, size, r)
+  g.fillStyle = 'rgba(255,255,255,0.16)'
+  g.fill()
+
+  g.lineWidth = pitch * 0.06
+  g.lineJoin = 'round'
+  g.strokeStyle = 'rgba(255,255,255,0.35)'
+  g.beginPath()
+  g.moveTo(x + r * 0.5, y + size - r)
+  g.lineTo(x + r * 0.5, y + r * 0.5)
+  g.lineTo(x + size - r, y + r * 0.5)
+  g.stroke()
+
+  g.strokeStyle = 'rgba(0,0,0,0.16)'
+  g.beginPath()
+  g.moveTo(x + size - r * 0.5, y + r)
+  g.lineTo(x + size - r * 0.5, y + size - r * 0.5)
+  g.lineTo(x + r, y + size - r * 0.5)
+  g.stroke()
+
+  return canvas.toDataURL('image/png')
+}

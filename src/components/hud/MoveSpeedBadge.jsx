@@ -1,7 +1,17 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useGameStore, selectMoveSpeedCap } from '../../store/useGameStore.js'
 import { useTouchMode } from './hooks.js'
 import { playButtonClick } from '../../systems/sfx.js'
+import { makeStudOverlayDataURL } from '../../systems/studTexture.js'
+
+// Tile size (CSS px) for this badge's stud overlay — see
+// systems/studTexture.js's makeStudOverlayDataURL. Same convention as the
+// Rebirth toolbar button (Hud.jsx's REBIRTH_BUTTON_STUD_PITCH).
+const SPEED_BADGE_STUD_PITCH = 12
+
+// Top-to-bottom fill for the speed panel — sky theme, matching the value's
+// prior #7dd3fc color.
+const SPEED_BADGE_GRADIENT = 'linear-gradient(180deg, #e0f2fe 0%, #7dd3fc 100%)'
 
 // Right-edge, vertically centred readout of the player's current physical
 // walk speed — store's moveSpeed (WALK_SPEED_BASE + equipped skate's own
@@ -12,12 +22,14 @@ import { playButtonClick } from '../../systems/sfx.js'
 // player singleton every frame, but the store value itself is static between
 // those writes).
 //
-// "Customize Speed"/"Max" labels always frame the value so the control
-// reads clearly even before it's clicked. Clicking the value turns it into a
-// number input — typing a value and pressing Enter (or blurring) calls the
-// store's setMoveSpeed, which clamps the typed value to [0, the player's own
-// naturally-earned ceiling] itself, so this component never needs to know
-// that ceiling to stay honest (it only displays it, via selectMoveSpeedCap).
+// "Set Speed"/"MAX" labels always frame the value, plaque-style (stud
+// overlay + pencil icon, same visual language as Hud.jsx's Rebirth button),
+// so the control reads clearly even before it's clicked. Clicking the value
+// turns it into a number input — typing a value and pressing Enter (or
+// blurring) calls the store's setMoveSpeed, which clamps the typed value to
+// [0, the player's own naturally-earned ceiling] itself, so this component
+// never needs to know that ceiling to stay honest (it only displays it, via
+// selectMoveSpeedCap).
 export default function MoveSpeedBadge() {
   const moveSpeed = useGameStore((s) => s.moveSpeed)
   const setMoveSpeed = useGameStore((s) => s.setMoveSpeed)
@@ -26,6 +38,7 @@ export default function MoveSpeedBadge() {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
   const inputRef = useRef(null)
+  const studOverlay = useMemo(() => `url(${makeStudOverlayDataURL(SPEED_BADGE_STUD_PITCH)})`, [])
 
   function beginEdit() {
     playButtonClick()
@@ -42,14 +55,42 @@ export default function MoveSpeedBadge() {
   return (
     <div
       data-hud="right-center"
-      className={`pointer-events-none absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-2 rounded-lg border border-slate-400/30 bg-black/50 text-slate-100 shadow-lg ${
-        isTouch ? 'px-2 py-1.5' : 'px-3 py-2'
-      }`}
+      className="pointer-events-none absolute right-4 top-1/2 flex -translate-y-1/2 flex-col items-center gap-1"
     >
-      <span className={isTouch ? 'text-base' : 'text-xl'}>⚡</span>
-      <div className="flex flex-col items-end gap-0.5">
-        <span className="whitespace-nowrap text-[10px] font-semibold leading-none text-slate-300/80">
-          Customize Speed
+      <span
+        className="whitespace-nowrap font-extrabold"
+        style={{
+          fontSize: isTouch ? '0.8rem' : '1rem',
+          lineHeight: 1,
+          color: '#ffffff',
+          letterSpacing: '-0.01em',
+          WebkitTextStroke: isTouch ? '2px #000000' : '3px #000000',
+          paintOrder: 'stroke fill',
+        }}
+      >
+        Set Speed
+      </span>
+      <div
+        className={`relative flex items-center justify-center rounded-2xl border-2 border-black shadow-lg ${
+          isTouch ? 'h-12 min-w-[144px] px-3' : 'h-16 min-w-[192px] px-4'
+        }`}
+        style={{
+          backgroundImage: `${studOverlay}, ${SPEED_BADGE_GRADIENT}`,
+          backgroundRepeat: 'repeat, no-repeat',
+          backgroundSize: `${SPEED_BADGE_STUD_PITCH}px ${SPEED_BADGE_STUD_PITCH}px, 100% 100%`,
+        }}
+      >
+        <span
+          className="pointer-events-none absolute select-none"
+          style={{
+            left: isTouch ? '-10px' : '-14px',
+            bottom: isTouch ? '-6px' : '-8px',
+            fontSize: isTouch ? '1.25rem' : '1.75rem',
+            transform: 'rotate(-45deg)',
+            filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.5))',
+          }}
+        >
+          ✏️
         </span>
         {editing ? (
           <input
@@ -62,8 +103,10 @@ export default function MoveSpeedBadge() {
             inputMode="decimal"
             min={0}
             max={maxMoveSpeed}
-            className="pointer-events-auto w-16 rounded border border-sky-300/50 bg-black/70 font-bold tabular-nums text-sky-300 outline-none"
-            style={{ fontSize: isTouch ? '0.85rem' : '1.125rem', lineHeight: 1 }}
+            className={`pointer-events-auto rounded border border-black/40 bg-white/80 text-center font-extrabold tabular-nums text-slate-900 outline-none ${
+              isTouch ? 'w-14' : 'w-20'
+            }`}
+            style={{ fontSize: isTouch ? '1.25rem' : '1.75rem', lineHeight: 1 }}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onBlur={commit}
@@ -89,23 +132,33 @@ export default function MoveSpeedBadge() {
                 beginEdit()
               }
             }}
-            className="pointer-events-auto cursor-pointer font-bold tabular-nums"
+            className="pointer-events-auto cursor-pointer font-extrabold tabular-nums"
             style={{
-              fontSize: isTouch ? '0.85rem' : '1.125rem',
+              fontSize: isTouch ? '1.25rem' : '1.75rem',
               lineHeight: 1,
-              color: '#7dd3fc',
+              color: '#ffffff',
               letterSpacing: '-0.02em',
-              WebkitTextStroke: isTouch ? '1.5px #000000' : '2px #000000',
+              WebkitTextStroke: isTouch ? '2px #000000' : '3px #000000',
               paintOrder: 'stroke fill',
             }}
           >
-            {moveSpeed.toFixed(1)} m/s
+            {moveSpeed.toFixed(1)}
           </span>
         )}
-        <span className="whitespace-nowrap text-[10px] leading-none text-slate-300/80">
-          Max {maxMoveSpeed.toFixed(1)} m/s
-        </span>
       </div>
+      <span
+        className="whitespace-nowrap font-extrabold"
+        style={{
+          fontSize: isTouch ? '0.7rem' : '0.85rem',
+          lineHeight: 1,
+          color: '#ffffff',
+          letterSpacing: '-0.01em',
+          WebkitTextStroke: isTouch ? '1.5px #000000' : '2px #000000',
+          paintOrder: 'stroke fill',
+        }}
+      >
+        MAX: {maxMoveSpeed.toFixed(1)}
+      </span>
     </div>
   )
 }
