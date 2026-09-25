@@ -13,9 +13,9 @@
 export const LEVEL_BAR_POLL_MS = 100
 
 // Track size in CSS pixels. Width is capped to the viewport by LEVEL_BAR_MAX_VW.
-export const LEVEL_BAR_WIDTH = 880
+export const LEVEL_BAR_WIDTH = 704
 export const LEVEL_BAR_HEIGHT = 80
-export const LEVEL_BAR_MAX_VW = 88
+export const LEVEL_BAR_MAX_VW = 70.4
 
 // Track border and the black text outline.
 export const LEVEL_BAR_BORDER = 6
@@ -43,6 +43,10 @@ export const LEVEL_BAR_FILL_GRADIENT =
 // Tile size (CSS px) for the bevelled-stud overlay tiled across the track
 // and its fill — see systems/studTexture.js's makeStudOverlayDataURL.
 export const LEVEL_BAR_STUD_PITCH = 20
+
+// Track corner radius in CSS px. Squared off rather than the fully round
+// (9999) pill this used to be, to match the game's blocky low-poly look.
+export const LEVEL_BAR_RADIUS = 16
 
 // Semi-transparent band behind the "<Speed> Speed" caption.
 export const LEVEL_BAR_CAPTION_BAND =
