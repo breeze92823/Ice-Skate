@@ -83,10 +83,10 @@ export default function MoveSpeedBadge() {
         <span
           className="pointer-events-none absolute select-none"
           style={{
-            left: isTouch ? '-10px' : '-14px',
-            bottom: isTouch ? '-6px' : '-8px',
-            fontSize: isTouch ? '1.25rem' : '1.75rem',
-            transform: 'rotate(-45deg)',
+            left: isTouch ? '-20px' : '-24px',
+            bottom: isTouch ? '4px' : '20px',
+            fontSize: isTouch ? '2.5rem' : '3.5rem',
+            transform: 'rotate(-1deg)',
             filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.5))',
           }}
         >
