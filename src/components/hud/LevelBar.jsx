@@ -24,6 +24,7 @@ import {
   LEVEL_BAR_CAPTION_BAND_PAD_Y,
   LEVEL_BAR_REBIRTH_TEXT_COLOR,
   LEVEL_BAR_STUD_PITCH,
+  LEVEL_BAR_RADIUS,
 } from '../../data/levelBar.js'
 
 // Solid cartoon outline for the overlaid text — an 8-direction black shadow
@@ -106,7 +107,7 @@ export default function LevelBar() {
       className="pointer-events-none absolute left-1/2 -translate-x-1/2"
       style={{ bottom: LEVEL_BAR_BOTTOM, width: LEVEL_BAR_WIDTH, maxWidth: `${LEVEL_BAR_MAX_VW}vw` }}
     >
-      <div style={{ textAlign: 'center', marginBottom: 4, position: 'relative', left: 350, top: 50 }}>
+      <div style={{ textAlign: 'center', marginBottom: 4, position: 'relative', left: 280, top: 50 }}>
         <span
           ref={rebirthCountRef}
           style={{
@@ -192,7 +193,7 @@ export default function LevelBar() {
             backgroundRepeat: 'repeat, no-repeat',
             backgroundSize: `${LEVEL_BAR_STUD_PITCH}px ${LEVEL_BAR_STUD_PITCH}px, 100% 100%`,
             border: `${LEVEL_BAR_BORDER}px solid #000`,
-            borderRadius: 9999,
+            borderRadius: LEVEL_BAR_RADIUS,
             overflow: 'hidden',
             boxShadow: '0 5px 0 rgba(0,0,0,0.28), inset 0 3px 5px rgba(0,0,0,0.12)',
           }}
