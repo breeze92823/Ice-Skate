@@ -230,13 +230,19 @@ async function applySkin(built, id) {
 // default_arm_L/R, default_leg_L/R) already bound to one shared skeleton —
 // confirmed by reading player.glb directly, not attached to bones as
 // separate objects. Equipping a part therefore means swapping *that mesh's
-// geometry* in place, keeping its existing skeleton binding. A part GLB's
-// own skeleton lists bones in whatever order its own export produced, which
-// usually isn't the base skeleton's order, so the geometry's `skinIndex`
-// values have to be remapped bone-name-by-bone-name into the base
-// skeleton's order first — otherwise the swapped part deforms against
-// whatever bone happens to share its old index, not the bone it actually
-// means, the moment the rig animates or proportions touch a bone.
+// geometry* in place, keeping its existing skeleton binding AND its existing
+// material. A part GLB is shape-only: the base mesh's material is what
+// applySkin already painted with the player's skin texture (same as every
+// other body part), so replacing it with whatever the part file itself
+// embeds would silently drop that skin back to blank/default — the part's
+// own material/textures are discarded entirely, only its geometry is used.
+//
+// A part GLB's own skeleton also lists bones in whatever order its own
+// export produced, which usually isn't the base skeleton's order, so the
+// geometry's `skinIndex` values have to be remapped bone-name-by-bone-name
+// into the base skeleton's order first — otherwise the swapped part deforms
+// against whatever bone happens to share its old index, not the bone it
+// actually means, the moment the rig animates or proportions touch a bone.
 async function applyPart(built, slot, id) {
   let gltf
   try {
@@ -255,14 +261,12 @@ async function applyPart(built, slot, id) {
   })
   if (!skinnedSource && !plainSource) return
 
-  convertMaterials(gltf.scene, built.owned)
   built.owned.scenes.push(gltf.scene)
 
   if (!skinnedSource) {
     // Some parts ship as a plain (non-skinned) mesh; use its geometry as-is.
     targetMesh.geometry.dispose()
     targetMesh.geometry = plainSource.geometry
-    targetMesh.material = plainSource.material
     built.slotObjects.push(gltf.scene)
     return
   }
@@ -290,7 +294,6 @@ async function applyPart(built, slot, id) {
 
   targetMesh.geometry.dispose()
   targetMesh.geometry = geometry
-  targetMesh.material = skinnedSource.material
   built.slotObjects.push(gltf.scene)
 }
 
