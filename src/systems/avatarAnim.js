@@ -5,7 +5,8 @@
 //   1. player.glb ships a clip matching GAIT.runClip -> drive it with an
 //      AnimationMixer, cross-faded under an idle clip when present.
 //   2. no such clip -> a generated push-glide skating stride on
-//      ArmL1/ArmR1/LegL1/LegR1 plus a Spine1 forward crouch, lateral
+//      ArmL1/ArmR1/LegL1/LegR1 (plus a second-segment knee/elbow bend on
+//      LegL2/LegR2/ArmL2/ArmR2) and a Spine1 forward crouch, lateral
 //      weight-shift sway, and a body bob.
 //
 // Everything here is null-safe: a missing bone or a total failure just
@@ -18,17 +19,51 @@ import { GAIT, RIG_MOUNT_OFFSET, clamp } from '../data/bloxity.js'
 // the other glides); each arm is anti-phase to the leg on its own side
 // (contralateral swing, for balance). `side` signs which way a leg splays
 // outward on its push phase (left leg pushes left, right leg pushes right).
+// The second-segment entries (kind 'leg2'/'arm2') share their own first
+// segment's offset, since a knee/elbow bend during that limb's recovery has
+// to land in the same phase the limb itself is already in.
 const LIMBS = [
   { name: 'LegL1', kind: 'leg', offset: 0, side: 1 },
   { name: 'LegR1', kind: 'leg', offset: Math.PI, side: -1 },
   { name: 'ArmL1', kind: 'arm', offset: Math.PI },
   { name: 'ArmR1', kind: 'arm', offset: 0 },
+  { name: 'LegL2', kind: 'leg2', offset: 0 },
+  { name: 'LegR2', kind: 'leg2', offset: Math.PI },
+  { name: 'ArmL2', kind: 'arm2', offset: Math.PI },
+  { name: 'ArmR2', kind: 'arm2', offset: 0 },
 ]
 
-const AXES = {
-  x: new THREE.Vector3(1, 0, 0),
-  y: new THREE.Vector3(0, 1, 0),
-  z: new THREE.Vector3(0, 0, 1),
+const _rootQuat = new THREE.Quaternion()
+const _parentQuat = new THREE.Quaternion()
+const _relQuat = new THREE.Quaternion()
+const _worldX = new THREE.Vector3(1, 0, 0)
+const _worldZ = new THREE.Vector3(0, 0, 1)
+
+// A limb bone's local axes are not world-aligned in this rig — how far off
+// depends on how that specific bone's bind pose was authored (confirmed
+// against player.glb: e.g. Spine1 sits at identity, most other bones
+// don't). Rotating every bone about one fixed axis, like this used to,
+// swings some limbs in a subtly wrong plane. This instead finds, once per
+// bone at bind pose, which axis *in that bone's own parent-local rotation
+// space* corresponds to the character's forward (+X, "swing") and sideways
+// (+Z, "push/sway") axes — reading the full parent chain via world
+// quaternions, not just the immediate parent, so a delta quaternion built
+// from it and premultiplied onto the bind pose always rotates the limb in
+// the same character-relative plane, whichever way that bone itself faces.
+// (The chain's own ancestry above `root`, e.g. the player's current facing,
+// cancels out of the parentQuat^-1 * rootQuat product, so this is safe to
+// call with the rig already live in the scene graph.)
+function boneAxes(root, bone) {
+  const parent = bone.parent
+  root.updateWorldMatrix(true, false)
+  parent.updateWorldMatrix(true, false)
+  root.getWorldQuaternion(_rootQuat)
+  parent.getWorldQuaternion(_parentQuat)
+  _relQuat.copy(_parentQuat).invert().multiply(_rootQuat)
+  return {
+    axisX: _worldX.clone().applyQuaternion(_relQuat).normalize(),
+    axisZ: _worldZ.clone().applyQuaternion(_relQuat).normalize(),
+  }
 }
 
 export function makeGait(built) {
@@ -36,9 +71,6 @@ export function makeGait(built) {
 
   const gait = {
     built,
-    axis: AXES[GAIT.swingAxis] || AXES.x,
-    pushAxis: AXES[GAIT.pushAxis] || AXES.z,
-    swayAxis: AXES[GAIT.swayAxis] || AXES.z,
     amp: 0, // eased 0..1 locomotion weight
     phase: 0, // radians along the stride
     idleTime: 0, // seconds, only advances while idle
@@ -50,6 +82,7 @@ export function makeGait(built) {
     limbs: [],
     spine: null,
     spineBind: null,
+    spineAxes: null,
   }
 
   const run = (built.clips || []).find((c) => GAIT.runClip.test(c.name))
@@ -69,12 +102,15 @@ export function makeGait(built) {
 
   for (const limb of LIMBS) {
     const bone = built.nodes[limb.name]
-    if (bone) gait.limbs.push({ ...limb, bone, bind: bone.quaternion.clone() })
+    if (bone && bone.parent) {
+      gait.limbs.push({ ...limb, bone, bind: bone.quaternion.clone(), ...boneAxes(built.root, bone) })
+    }
   }
   const spine = built.nodes.Spine1
-  if (spine) {
+  if (spine && spine.parent) {
     gait.spine = spine
     gait.spineBind = spine.quaternion.clone()
+    gait.spineAxes = boneAxes(built.root, spine)
   }
   return gait
 }
@@ -110,11 +146,13 @@ export function updateGait(gait, dt, speed01, grounded = true, verticalVelocity 
       if (limb.name === 'LegL1') angle = GAIT.airborneLegL
       else if (limb.name === 'LegR1') angle = GAIT.airborneLegR
       else if (limb.kind === 'arm') angle = armAngle
-      gait.q.setFromAxisAngle(gait.axis, angle)
+      else if (limb.kind === 'leg2') angle = GAIT.airborneKnee
+      else if (limb.kind === 'arm2') angle = GAIT.airborneElbow
+      gait.q.setFromAxisAngle(limb.axisX, angle)
       limb.bone.quaternion.copy(limb.bind).premultiply(gait.q)
     }
     if (gait.spine) {
-      gait.q.setFromAxisAngle(AXES.x, GAIT.airborneLean)
+      gait.q.setFromAxisAngle(gait.spineAxes.axisX, GAIT.airborneLean)
       gait.spine.quaternion.copy(gait.spineBind).premultiply(gait.q)
     }
     gait.built.root.position.y = RIG_MOUNT_OFFSET.y
@@ -130,11 +168,11 @@ export function updateGait(gait, dt, speed01, grounded = true, verticalVelocity 
         continue
       }
       const sign = limb.name === 'ArmL1' ? -1 : 1
-      gait.q.setFromAxisAngle(gait.swayAxis, sign * (GAIT.idleArmSway + idle * GAIT.idleArmSwayAmp))
+      gait.q.setFromAxisAngle(limb.axisZ, sign * (GAIT.idleArmSway + idle * GAIT.idleArmSwayAmp))
       limb.bone.quaternion.copy(limb.bind).premultiply(gait.q)
     }
     if (gait.spine) {
-      gait.q.setFromAxisAngle(AXES.x, idle * GAIT.idleSpineSway)
+      gait.q.setFromAxisAngle(gait.spineAxes.axisX, idle * GAIT.idleSpineSway)
       gait.spine.quaternion.copy(gait.spineBind).premultiply(gait.q)
     }
     gait.built.root.position.y = RIG_MOUNT_OFFSET.y + idle * GAIT.idleBob
@@ -148,20 +186,30 @@ export function updateGait(gait, dt, speed01, grounded = true, verticalVelocity 
       // and draws the leg back under the body on the recovery half.
       const strideAngle = Math.sin(phaseAngle) * GAIT.legSwing * gait.amp
       const pushAngle = limb.side * GAIT.legPush * gait.amp * (0.5 + 0.5 * Math.sin(phaseAngle))
-      gait.q.setFromAxisAngle(gait.axis, strideAngle)
-      gait.q2.setFromAxisAngle(gait.pushAxis, pushAngle)
+      gait.q.setFromAxisAngle(limb.axisX, strideAngle)
+      gait.q2.setFromAxisAngle(limb.axisZ, pushAngle)
       limb.bone.quaternion.copy(limb.bind).premultiply(gait.q2).premultiply(gait.q)
-    } else {
+    } else if (limb.kind === 'leg2') {
+      // Knee bends forward on this leg's own recovery half (the half its
+      // LegL1/LegR1 counterpart swings backward), never the other way.
+      const bend = Math.max(0, -Math.sin(phaseAngle)) * GAIT.kneeBend * gait.amp
+      gait.q.setFromAxisAngle(limb.axisX, bend)
+      limb.bone.quaternion.copy(limb.bind).premultiply(gait.q)
+    } else if (limb.kind === 'arm') {
       const swing = GAIT.armSwing * gait.amp
-      gait.q.setFromAxisAngle(gait.axis, Math.sin(phaseAngle) * swing)
+      gait.q.setFromAxisAngle(limb.axisX, Math.sin(phaseAngle) * swing)
+      limb.bone.quaternion.copy(limb.bind).premultiply(gait.q)
+    } else if (limb.kind === 'arm2') {
+      const bend = Math.max(0, Math.sin(phaseAngle)) * GAIT.elbowBend * gait.amp
+      gait.q.setFromAxisAngle(limb.axisX, bend)
       limb.bone.quaternion.copy(limb.bind).premultiply(gait.q)
     }
   }
   if (gait.spine) {
     // Forward crouch plus a side-to-side weight shift onto whichever skate
     // is currently gliding.
-    gait.q.setFromAxisAngle(AXES.x, GAIT.lean * gait.amp)
-    gait.q2.setFromAxisAngle(gait.swayAxis, Math.sin(gait.phase) * GAIT.hipSway * gait.amp)
+    gait.q.setFromAxisAngle(gait.spineAxes.axisX, GAIT.lean * gait.amp)
+    gait.q2.setFromAxisAngle(gait.spineAxes.axisZ, Math.sin(gait.phase) * GAIT.hipSway * gait.amp)
     gait.spine.quaternion.copy(gait.spineBind).premultiply(gait.q2).premultiply(gait.q)
   }
   gait.built.root.position.y = RIG_MOUNT_OFFSET.y + Math.abs(Math.sin(gait.phase)) * GAIT.bob * gait.amp

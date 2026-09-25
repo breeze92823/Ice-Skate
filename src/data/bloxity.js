@@ -50,12 +50,12 @@ export const PROPORTIONS = {
 // Equipped-slot table. `part` slots replace the matching default_* mesh in
 // the base rig; `item` slots are extra meshes parented to a bone.
 export const AVATAR_SLOTS = [
-  { key: 'headId', kind: 'part', type: 'head', replaces: 'default_head', bone: 'Neck1' },
-  { key: 'torsoId', kind: 'part', type: 'torso', replaces: 'default_torso', bone: 'Spine1' },
-  { key: 'armLId', kind: 'part', type: 'arms', side: 'L', replaces: 'default_arm_L', bone: 'ArmL1' },
-  { key: 'armRId', kind: 'part', type: 'arms', side: 'R', replaces: 'default_arm_R', bone: 'ArmR1' },
-  { key: 'legLId', kind: 'part', type: 'legs', side: 'L', replaces: 'default_leg_L', bone: 'LegL1' },
-  { key: 'legRId', kind: 'part', type: 'legs', side: 'R', replaces: 'default_leg_R', bone: 'LegR1' },
+  { key: 'headId', kind: 'part', type: 'head', replaces: 'default_head' },
+  { key: 'torsoId', kind: 'part', type: 'torso', replaces: 'default_torso' },
+  { key: 'armLId', kind: 'part', type: 'arms', side: 'L', replaces: 'default_arm_L' },
+  { key: 'armRId', kind: 'part', type: 'arms', side: 'R', replaces: 'default_arm_R' },
+  { key: 'legLId', kind: 'part', type: 'legs', side: 'L', replaces: 'default_leg_L' },
+  { key: 'legRId', kind: 'part', type: 'legs', side: 'R', replaces: 'default_leg_R' },
   { key: 'hatId', kind: 'item', type: 'hats', attach: 'Neck1' },
   { key: 'backId', kind: 'item', type: 'back', attach: 'Spine2' },
 ]
@@ -88,14 +88,16 @@ export const BASE_MODEL_URL = `${AVATAR_CDN}/player.glb`
 export const DEFAULT_EQUIPPED = {}
 
 // --- Locomotion: the skate cycle ----------------------------------------
-// The base rig is R6-style: single-segment limbs (ArmL1/ArmR1/LegL1/LegR1)
-// and a two-node spine. If player.glb ships its own clip whose name matches
+// The base rig has two-segment limbs (ArmL1->ArmL2, LegL1->LegL2) and a
+// two-node spine. If player.glb ships its own clip whose name matches
 // `runClip`, avatarAnim.js plays that through an AnimationMixer instead and
 // ignores every number below; these only drive the generated fallback, which
 // is a push-glide skating stride rather than a run: each leg splays outward
-// (pushAxis) on its push phase and draws back under the body on its glide
-// phase, in addition to the forward/back swing (swingAxis) shared with the
-// arms.
+// on its push phase and draws back under the body on its glide phase, in
+// addition to the forward/back swing shared with the arms, plus a knee/elbow
+// bend on the second segment during each limb's own recovery half
+// (kneeBend/elbowBend below). avatarAnim.js derives each bone's own
+// swing/push axis from its bind pose rather than a configured world axis.
 export const GAIT = {
   runClip: /run|sprint|jog/i,
   idleClip: /idle|stand/i,
@@ -106,11 +108,16 @@ export const GAIT = {
   lean: 0.22,
   hipSway: 0.12,
   bob: 0.03,
-  swingAxis: 'x',
-  pushAxis: 'z',
   blendHz: 8,
 
-  swayAxis: 'z',
+  // Second-segment (knee/elbow) bend, peaking during each limb's own
+  // recovery/swing phase. avatarAnim.js derives each bone's own swing/push
+  // axis from its bind pose rather than a configured world axis, since the
+  // rig's limb bones aren't uniformly oriented (confirmed against
+  // player.glb) — a fixed axis swung some of them in a subtly wrong plane.
+  kneeBend: 0.5,
+  elbowBend: 0.25,
+
   idleSwayHz: 1.6,
   idleArmSway: 0.07,
   idleArmSwayAmp: 0.03,
@@ -119,6 +126,8 @@ export const GAIT = {
 
   airborneLegL: -0.55,
   airborneLegR: 0.3,
+  airborneKnee: 0.7,
+  airborneElbow: 0.6,
   // Arms blend continuously between these two off player.velocity.y instead
   // of holding one fixed pose, so they read up while rising and drop while
   // falling, crossing smoothly through 0 at the jump's apex.

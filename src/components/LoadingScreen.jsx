@@ -1,12 +1,21 @@
 import { useEffect, useState } from 'react'
 import { BASE_RIG_MAX_ATTEMPTS, requestAvatarRetry, subscribeAvatarStatus } from '../systems/avatarReadiness.js'
+import { subscribeAuth } from '../systems/bloxity.js'
 import { DEV_MODE } from '../systems/devMode.js'
 
 // Full-screen DOM overlay, a sibling of <Canvas> in App.jsx (never drei
 // <Html>) — sits over the canvas until the Bloxity character has actually
-// loaded. The canvas still mounts underneath so its own assets warm up
-// behind this screen, but the overlay stays fully opaque with no fade until
-// avatarReady, so the game is never visible without a loaded character.
+// loaded AND auth has settled. The canvas still mounts underneath so its own
+// assets warm up behind this screen, but the overlay stays fully opaque with
+// no fade until both are true, so the game is never visible without a loaded
+// character or before this client's own multiplayer identity is known.
+//
+// The auth half of the gate exists for systems/net.js's USERNAME_WAIT_MS: a
+// client that joins the multiplayer room before auth resolves connects as a
+// guest, so the server can't yet evict a same-account ghost session from a
+// prior tab (RinkRoom.ts's setUserId()) -- that ghost then briefly renders as
+// a remote player to the very client that's supposed to replace it. Waiting
+// here means the join almost always already carries the real identity.
 //
 // systems/avatarModel.js's base-rig loader retries with backoff up to
 // BASE_RIG_MAX_ATTEMPTS times, reporting progress through
@@ -17,28 +26,34 @@ const FADE_MS = 450
 
 export default function LoadingScreen() {
   const [status, setStatus] = useState({ ready: false, attempt: 0, failed: false })
+  const [authReady, setAuthReady] = useState(false)
   const [hidden, setHidden] = useState(false)
 
   useEffect(() => subscribeAvatarStatus(setStatus), [])
+  useEffect(() => subscribeAuth((s) => setAuthReady(s.ready)), [])
 
-  // Fades out FADE_MS after the character is ready; reopens immediately (no
-  // fade) the moment it isn't — `ready` is live, so this can happen again
-  // later (a CDN blip mid-game), not just at boot. DEV_MODE skips the gate
+  const gateReady = status.ready && authReady
+
+  // Fades out FADE_MS once both gates clear; reopens immediately (no fade)
+  // the moment either isn't — `ready` is live, so this can happen again later
+  // (a CDN blip mid-game), not just at boot. DEV_MODE skips the gate
   // entirely: the game starts right away even if the avatar never loads
   // (Player.jsx's capsule fallback covers the visual until/unless it does).
   useEffect(() => {
-    if (!status.ready && !DEV_MODE) {
+    if (!gateReady && !DEV_MODE) {
       setHidden(false)
       return
     }
     const id = setTimeout(() => setHidden(true), FADE_MS)
     return () => clearTimeout(id)
-  }, [status.ready])
+  }, [gateReady])
 
   const statusText =
-    status.attempt === 0
-      ? 'LOADING CHARACTER…'
-      : `RECONNECTING CHARACTER… (attempt ${status.attempt}/${BASE_RIG_MAX_ATTEMPTS})`
+    !status.ready && status.attempt > 0
+      ? `RECONNECTING CHARACTER… (attempt ${status.attempt}/${BASE_RIG_MAX_ATTEMPTS})`
+      : !status.ready
+        ? 'LOADING CHARACTER…'
+        : 'SIGNING IN…'
 
   return (
     <div

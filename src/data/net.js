@@ -100,9 +100,20 @@ export const STATS_RESEND_DEBOUNCE_MS = 1_000
 export const PROGRESS_RESEND_DEBOUNCE_MS = 3_000
 
 // Wait up to this long for the Bloxity auth state to settle before the
-// first connect, so a signed-in player joins under their real name rather
-// than the "Player" fallback. Not waited on reconnects.
-export const USERNAME_WAIT_MS = 2_500
+// first connect. This is correctness-critical, not just cosmetic: a signed-in
+// player who joins BEFORE auth resolves connects with userId="" (a guest),
+// so the server's onJoin has nothing to evict a same-account ghost session
+// with (RinkRoom.ts's setUserId()) -- that ghost then sits in room state and
+// renders as a remote player to the very client that's supposed to replace
+// it, until a LATER `identify` message finally corrects it. Waiting here
+// (LoadingScreen.jsx blocks on authState.ready so the player sees a loading
+// state rather than a frozen/guest flash) means the join almost always
+// already carries the real userId, so the ghost is evicted server-side
+// before this client ever receives a state snapshot containing it. Bounded
+// -- a blocked/absent SDK resolves authState.ready near-instantly anyway
+// (bloxity.js init()), so this ceiling only matters for a genuinely slow
+// network round-trip.
+export const USERNAME_WAIT_MS = 8_000
 
 // --- Remote body look (components/RemotePlayers.jsx) ------------------------
 // Capsule dims are fixed (unlike the local player's, which scale with

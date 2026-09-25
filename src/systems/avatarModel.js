@@ -143,14 +143,6 @@ function firstSkinnedMesh(root) {
   return found
 }
 
-function firstMesh(root) {
-  let found = null
-  root.traverse((o) => {
-    if (!found && (o.isMesh || o.isSkinnedMesh)) found = o
-  })
-  return found
-}
-
 const _footToLocal = new THREE.Matrix4()
 const _footPos = new THREE.Vector3()
 
@@ -234,6 +226,17 @@ async function applySkin(built, id) {
   }
 }
 
+// Bloxity's base rig ships six SkinnedMeshes (default_head, default_torso,
+// default_arm_L/R, default_leg_L/R) already bound to one shared skeleton —
+// confirmed by reading player.glb directly, not attached to bones as
+// separate objects. Equipping a part therefore means swapping *that mesh's
+// geometry* in place, keeping its existing skeleton binding. A part GLB's
+// own skeleton lists bones in whatever order its own export produced, which
+// usually isn't the base skeleton's order, so the geometry's `skinIndex`
+// values have to be remapped bone-name-by-bone-name into the base
+// skeleton's order first — otherwise the swapped part deforms against
+// whatever bone happens to share its old index, not the bone it actually
+// means, the moment the rig animates or proportions touch a bone.
 async function applyPart(built, slot, id) {
   let gltf
   try {
@@ -241,24 +244,54 @@ async function applyPart(built, slot, id) {
   } catch {
     return // slot unavailable: the default_* mesh stays visible
   }
-  const mesh = firstMesh(gltf.scene)
-  if (!mesh) return
+  const targetMesh = built.nodes[slot.replaces]
+  if (!targetMesh || !targetMesh.isSkinnedMesh) return
+
+  let skinnedSource = null
+  let plainSource = null
+  gltf.scene.traverse((o) => {
+    if (o.isSkinnedMesh && !skinnedSource) skinnedSource = o
+    else if (o.isMesh && !plainSource) plainSource = o
+  })
+  if (!skinnedSource && !plainSource) return
 
   convertMaterials(gltf.scene, built.owned)
   built.owned.scenes.push(gltf.scene)
 
-  const replaced = built.nodes[slot.replaces]
-  if (replaced) replaced.visible = false
-
-  if (mesh.isSkinnedMesh && built.skinned) {
-    mesh.bind(built.skinned.skeleton, built.skinned.bindMatrix)
-    built.root.add(mesh)
-  } else {
-    const bone = built.nodes[slot.bone]
-    if (bone) bone.add(mesh)
-    else built.root.add(mesh)
+  if (!skinnedSource) {
+    // Some parts ship as a plain (non-skinned) mesh; use its geometry as-is.
+    targetMesh.geometry.dispose()
+    targetMesh.geometry = plainSource.geometry
+    targetMesh.material = plainSource.material
+    built.slotObjects.push(gltf.scene)
+    return
   }
-  built.slotObjects.push(mesh)
+
+  const geometry = skinnedSource.geometry.clone()
+  const baseSkeleton = built.skinned.skeleton
+  if (skinnedSource.skeleton) {
+    const baseIndexByName = new Map()
+    baseSkeleton.bones.forEach((bone, i) => baseIndexByName.set(bone.name, i))
+    const remap = new Map()
+    skinnedSource.skeleton.bones.forEach((bone, i) => {
+      const baseIndex = baseIndexByName.get(bone.name)
+      if (baseIndex !== undefined) remap.set(i, baseIndex)
+    })
+    const skinIndex = geometry.getAttribute('skinIndex')
+    if (skinIndex) {
+      const array = skinIndex.array
+      for (let i = 0; i < array.length; i += 1) {
+        const mapped = remap.get(array[i])
+        if (mapped !== undefined) array[i] = mapped
+      }
+      skinIndex.needsUpdate = true
+    }
+  }
+
+  targetMesh.geometry.dispose()
+  targetMesh.geometry = geometry
+  targetMesh.material = skinnedSource.material
+  built.slotObjects.push(gltf.scene)
 }
 
 async function applyItem(built, slot, id) {
@@ -361,7 +394,13 @@ export function applyProportions(built, p) {
 
   built.root.position.set(RIG_MOUNT_OFFSET.x, RIG_MOUNT_OFFSET.y, RIG_MOUNT_OFFSET.z)
 
-  built.root.scale.setScalar((PLAYER_HEIGHT / RIG_HEIGHT) * p.height)
+  // Two different scale factors share this property: converting the rig's
+  // authored units into metres (uniform — it must not distort the model)
+  // and the height *proportion* itself, which the Bloxity portal applies as
+  // a vertical stretch only, not a uniform grow — a taller character isn't
+  // proportionally wider, just taller.
+  const unitScale = PLAYER_HEIGHT / RIG_HEIGHT
+  built.root.scale.set(unitScale, unitScale * p.height, unitScale)
 
   return {
     height: PLAYER_HEIGHT * p.height,
