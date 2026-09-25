@@ -27,6 +27,11 @@ import {
   BUTTON_CLICK_SYNTH_DECAY_S,
   BUTTON_CLICK_SYNTH_NOISE_GAIN,
   BUTTON_CLICK_SYNTH_NOISE_DECAY_S,
+  BUTTON_HOVER_GAIN,
+  BUTTON_HOVER_SYNTH_FREQ_START_HZ,
+  BUTTON_HOVER_SYNTH_FREQ_END_HZ,
+  BUTTON_HOVER_SYNTH_ATTACK_S,
+  BUTTON_HOVER_SYNTH_DECAY_S,
   ACTION_FAIL_GAIN,
   ACTION_FAIL_SYNTH_NOTES_HZ,
   ACTION_FAIL_SYNTH_NOTE_GAP_S,
@@ -73,6 +78,7 @@ export function preload() {
   loadBuffer(ctx, SPEED_GAIN_SOUND_URL)
   synthesizeLevelUpBuffer(ctx)
   synthesizeButtonClickBuffer(ctx)
+  synthesizeButtonHoverBuffer(ctx)
   synthesizeActionFailBuffer(ctx)
   synthesizeWallBreakBuffer(ctx)
 }
@@ -286,6 +292,54 @@ export function playButtonClick() {
     source.buffer = buffer
     const gain = ctx.createGain()
     gain.gain.value = BUTTON_CLICK_GAIN
+    source.connect(gain)
+    gain.connect(getMasterBus())
+    source.start(0)
+  })
+}
+
+// Renders the hover "blip" once via OfflineAudioContext and caches it — a
+// quick, quiet sine sweeping up from BUTTON_HOVER_SYNTH_FREQ_START_HZ to
+// BUTTON_HOVER_SYNTH_FREQ_END_HZ under a fast-attack/decay envelope.
+let buttonHoverBufferPromise = null
+
+function synthesizeButtonHoverBuffer(ctx) {
+  if (!buttonHoverBufferPromise) {
+    const end = BUTTON_HOVER_SYNTH_ATTACK_S + BUTTON_HOVER_SYNTH_DECAY_S
+    const sampleRate = ctx.sampleRate
+    const offline = new OfflineAudioContext(1, Math.ceil((end + 0.02) * sampleRate), sampleRate)
+
+    const osc = offline.createOscillator()
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(BUTTON_HOVER_SYNTH_FREQ_START_HZ, 0)
+    osc.frequency.exponentialRampToValueAtTime(BUTTON_HOVER_SYNTH_FREQ_END_HZ, end)
+
+    const gain = offline.createGain()
+    gain.gain.setValueAtTime(0, 0)
+    gain.gain.linearRampToValueAtTime(1, BUTTON_HOVER_SYNTH_ATTACK_S)
+    gain.gain.exponentialRampToValueAtTime(0.001, end)
+
+    osc.connect(gain)
+    gain.connect(offline.destination)
+
+    osc.start(0)
+    osc.stop(end + 0.02)
+
+    buttonHoverBufferPromise = offline.startRendering()
+  }
+  return buttonHoverBufferPromise
+}
+
+// Fire-and-forget one-shot for the pointer hovering into a HUD button.
+export function playButtonHover() {
+  const ctx = unlock()
+  if (!ctx) return
+  synthesizeButtonHoverBuffer(ctx).then((buffer) => {
+    if (!buffer) return
+    const source = ctx.createBufferSource()
+    source.buffer = buffer
+    const gain = ctx.createGain()
+    gain.gain.value = BUTTON_HOVER_GAIN
     source.connect(gain)
     gain.connect(getMasterBus())
     source.start(0)

@@ -40,6 +40,10 @@ export const LEVEL_BAR_TRANSITION_MS = 200
 export const LEVEL_BAR_FILL_GRADIENT =
   'linear-gradient(180deg, #ffe24d 0%, #ff9d00 52%, #ff2d00 100%)'
 
+// Tile size (CSS px) for the bevelled-stud overlay tiled across the track
+// and its fill — see systems/studTexture.js's makeStudOverlayDataURL.
+export const LEVEL_BAR_STUD_PITCH = 20
+
 // Semi-transparent band behind the "<Speed> Speed" caption.
 export const LEVEL_BAR_CAPTION_BAND =
   'linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0) 100%)'

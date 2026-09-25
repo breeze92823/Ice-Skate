@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { afkState } from '../../systems/afk.js'
 import { hexSpeedPadState } from '../../systems/hexPowerPad.js'
@@ -6,12 +6,13 @@ import { merchantState } from '../../systems/merchant.js'
 import { interactHoldState } from '../../systems/interactHold.js'
 import { settings } from '../../systems/settingsState.js'
 import { health as playerHealth } from '../../systems/playerHealth.js'
-import { playButtonClick } from '../../systems/sfx.js'
+import { playButtonClick, playButtonHover } from '../../systems/sfx.js'
 import { useGameStore } from '../../store/useGameStore.js'
 import { canAcceptRebirth, rebirthRequirement } from '../../data/progression.js'
 import { AURA_TIERS } from '../../data/aura.js'
 import { SHOP_ITEMS } from '../../data/shop.js'
 import { AFK_TARGET_CONFIG } from '../../data/afk.js'
+import { makeStudOverlayDataURL } from '../../systems/studTexture.js'
 import ActionPopups from './ActionPopups.jsx'
 import TouchControls from './TouchControls.jsx'
 import RotatePrompt from './RotatePrompt.jsx'
@@ -414,6 +415,13 @@ function TargetPurchaseWindow({ targetId, onClose, isTouch }) {
   )
 }
 
+// Tile size (CSS px) for the Rebirth toolbar button's stud overlay — see
+// systems/studTexture.js's makeStudOverlayDataURL.
+const REBIRTH_BUTTON_STUD_PITCH = 14
+
+// Top-to-bottom fill for the Rebirth toolbar button.
+const REBIRTH_BUTTON_GRADIENT = 'linear-gradient(180deg, #FFA4FA 0%, #FF4BC2 100%)'
+
 // Left-edge, vertically centred stack: win count above, rebirth action
 // below. Both are selector-driven and re-render only when their value
 // changes, never per frame.
@@ -428,6 +436,7 @@ function LeftCenterControls() {
   const [showShopWindow, setShowShopWindow] = useState(false)
   const [purchaseTargetId, setPurchaseTargetId] = useState(null)
   const isTouch = useTouchMode()
+  const studOverlay = useMemo(() => `url(${makeStudOverlayDataURL(REBIRTH_BUTTON_STUD_PITCH)})`, [])
 
   // systems/merchant.js can't open a React panel itself (framework-free),
   // so E near the shop just raises an edge flag there; this throttled poll
@@ -489,7 +498,7 @@ function LeftCenterControls() {
   if (isTouch) {
     return (
       <div data-hud="left-center" className="pointer-events-none absolute left-4 top-24 flex items-center gap-2">
-        <div className="flex items-center gap-1 rounded-lg border border-slate-400/30 bg-black/50 px-2 py-1.5 text-slate-100 shadow-lg">
+        <div className="flex items-center gap-1 px-2 py-1.5 text-slate-100">
           <img src="/ui/xp_cup.png" alt="" className="h-5 w-5" draggable={false} />
           <span
             className="font-bold tabular-nums"
@@ -525,11 +534,22 @@ function LeftCenterControls() {
             playButtonClick()
             setShowRebirthWindow(true)
           }}
+          onMouseEnter={playButtonHover}
           title="Open Rebirth"
-          className="pointer-events-auto flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded-lg border border-amber-400/40 bg-amber-600/80 text-slate-100 shadow-lg transition hover:bg-amber-500"
+          className="pointer-events-auto flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded-lg border-2 border-black text-slate-100 shadow-lg transition hover:scale-110 hover:brightness-110"
+          style={{
+            backgroundImage: `${studOverlay}, ${REBIRTH_BUTTON_GRADIENT}`,
+            backgroundRepeat: 'repeat, no-repeat',
+            backgroundSize: `${REBIRTH_BUTTON_STUD_PITCH}px ${REBIRTH_BUTTON_STUD_PITCH}px, 100% 100%`,
+          }}
         >
           <img src="/ui/rebirth.png" alt="" className="h-5 w-5" draggable={false} />
-          <span className="text-[7px] font-semibold leading-none tracking-wide">Rebirth</span>
+          <span
+            className="text-[7px] font-semibold leading-none tracking-wide"
+            style={{ WebkitTextStroke: '1px black', paintOrder: 'stroke fill' }}
+          >
+            Rebirth
+          </span>
         </button>
         {rebirthWindow}
         {auraWindow}
@@ -542,7 +562,7 @@ function LeftCenterControls() {
   // Desktop: vertically-centred 2x2 grid at the left edge.
   return (
     <div data-hud="left-center" className="pointer-events-none absolute left-4 top-1/2 flex -translate-y-1/2 flex-col items-center gap-2">
-      <div className="flex items-center gap-2 rounded-lg border border-slate-400/30 bg-black/50 px-3 py-2 text-slate-100 shadow-lg">
+      <div className="flex items-center gap-2 px-3 py-2 text-slate-100">
         <img src="/ui/xp_cup.png" alt="" className="h-8 w-8" draggable={false} />
         <span
           className="font-bold tabular-nums"
@@ -580,11 +600,22 @@ function LeftCenterControls() {
               playButtonClick()
               setShowRebirthWindow(true)
             }}
+            onMouseEnter={playButtonHover}
             title="Open Rebirth"
-            className="pointer-events-auto flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-lg border border-amber-400/40 bg-amber-600/80 px-3 py-2 text-slate-100 shadow-lg transition hover:bg-amber-500"
+            className="pointer-events-auto flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-lg border-2 border-black px-3 py-2 text-slate-100 shadow-lg transition hover:scale-110 hover:brightness-110"
+            style={{
+              backgroundImage: `${studOverlay}, ${REBIRTH_BUTTON_GRADIENT}`,
+              backgroundRepeat: 'repeat, no-repeat',
+              backgroundSize: `${REBIRTH_BUTTON_STUD_PITCH}px ${REBIRTH_BUTTON_STUD_PITCH}px, 100% 100%`,
+            }}
           >
             <img src="/ui/rebirth.png" alt="" className="h-10 w-10" draggable={false} />
-            <span className="text-xs font-semibold tracking-wide">Rebirth</span>
+            <span
+              className="text-xs font-semibold tracking-wide"
+              style={{ WebkitTextStroke: '4px black', paintOrder: 'stroke fill' }}
+            >
+              Rebirth
+            </span>
           </button>
         </div>
       </div>

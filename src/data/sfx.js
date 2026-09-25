@@ -52,6 +52,17 @@ export const BUTTON_CLICK_SYNTH_DECAY_S = 0.045
 export const BUTTON_CLICK_SYNTH_NOISE_GAIN = 0.22
 export const BUTTON_CLICK_SYNTH_NOISE_DECAY_S = 0.02
 
+// Fired when the pointer hovers into a hover-highlighted HUD button. No
+// real file dropped yet, so playButtonHover() synthesizes a soft rising
+// "blip", quieter and shorter than the click so it doesn't compete with it.
+export const BUTTON_HOVER_SOUND_URL = '/audio/button_hover.mp3'
+export const BUTTON_HOVER_GAIN = 0.05
+
+export const BUTTON_HOVER_SYNTH_FREQ_START_HZ = 700
+export const BUTTON_HOVER_SYNTH_FREQ_END_HZ = 1150
+export const BUTTON_HOVER_SYNTH_ATTACK_S = 0.003
+export const BUTTON_HOVER_SYNTH_DECAY_S = 0.05
+
 // One-shot for a wall's health hitting 0. No wall system in this project;
 // kept for parity, never triggered.
 export const WALL_BREAK_SOUND_URL = '/audio/wall_break.mp3'

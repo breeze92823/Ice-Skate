@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useGameStore } from '../../store/useGameStore.js'
 import { levelProgress, canAcceptRebirth } from '../../data/progression.js'
 import { formatShort } from '../../data/format.js'
@@ -6,6 +6,7 @@ import { player } from '../../systems/playerState.js'
 import { isInPvpZone } from '../../data/pvpZone.js'
 import { healthFraction } from '../../systems/playerHealth.js'
 import { HUD_HEALTH_BAR } from '../../data/playerHealth.js'
+import { makeStudOverlayDataURL } from '../../systems/studTexture.js'
 import {
   LEVEL_BAR_POLL_MS,
   LEVEL_BAR_WIDTH,
@@ -22,6 +23,7 @@ import {
   LEVEL_BAR_CAPTION_BAND_PAD_X,
   LEVEL_BAR_CAPTION_BAND_PAD_Y,
   LEVEL_BAR_REBIRTH_TEXT_COLOR,
+  LEVEL_BAR_STUD_PITCH,
 } from '../../data/levelBar.js'
 
 // Solid cartoon outline for the overlaid text — an 8-direction black shadow
@@ -47,6 +49,8 @@ export default function LevelBar() {
   const fillRef = useRef(null)
   const hpWrapRef = useRef(null)
   const hpFillRef = useRef(null)
+
+  const studOverlay = useMemo(() => `url(${makeStudOverlayDataURL(LEVEL_BAR_STUD_PITCH)})`, [])
 
   useEffect(() => {
     let last = 0
@@ -184,7 +188,9 @@ export default function LevelBar() {
           style={{
             position: 'relative',
             height: LEVEL_BAR_HEIGHT,
-            background: '#f4f4f4',
+            background: `${studOverlay}, #f4f4f4`,
+            backgroundRepeat: 'repeat, no-repeat',
+            backgroundSize: `${LEVEL_BAR_STUD_PITCH}px ${LEVEL_BAR_STUD_PITCH}px, 100% 100%`,
             border: `${LEVEL_BAR_BORDER}px solid #000`,
             borderRadius: 9999,
             overflow: 'hidden',
@@ -199,7 +205,9 @@ export default function LevelBar() {
               top: 0,
               bottom: 0,
               width: '0%',
-              background: LEVEL_BAR_FILL_GRADIENT,
+              background: `${studOverlay}, ${LEVEL_BAR_FILL_GRADIENT}`,
+              backgroundRepeat: 'repeat, no-repeat',
+              backgroundSize: `${LEVEL_BAR_STUD_PITCH}px ${LEVEL_BAR_STUD_PITCH}px, 100% 100%`,
               transition: `width ${LEVEL_BAR_TRANSITION_MS}ms ease-out`,
             }}
           />
